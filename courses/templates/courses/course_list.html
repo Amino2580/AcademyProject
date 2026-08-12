@@ -1,0 +1,31 @@
+<h1>
+کلاس‌های آموزشگاه موسیقی
+</h1>
+
+
+{% for course in courses %}
+
+<hr>
+
+<h2>
+    {{ course.title }}
+</h2>
+
+<p>
+استاد:
+{{ course.teacher.first_name }}
+{{ course.teacher.last_name }}
+</p>
+
+<p>
+قیمت:
+{{ course.price }}
+</p>
+
+{% empty %}
+
+<p>
+هنوز کلاسی ثبت نشده است.
+</p>
+
+{% endfor %}

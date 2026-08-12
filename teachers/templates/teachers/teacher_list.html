@@ -1,0 +1,51 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+
+<h1>اساتید آموزشگاه</h1>
+
+{% for teacher in teachers %}
+
+<div>
+
+    <h2>
+    <a href="{% url 'teacher-detail' teacher.pk %}">
+        {{ teacher.first_name }}
+        {{ teacher.last_name }}
+    </a>
+    </h2>
+
+    <p>
+        🎹 ساز تخصصی:
+        {{ teacher.specialty }}
+    </p>
+
+    <p>
+        {{ teacher.bio }}
+    </p>
+
+    {% if teacher.instagram %}
+
+        <p>
+            Instagram:
+            {{ teacher.instagram }}
+        </p>
+
+    {% endif %}
+
+    {% if teacher.telegram %}
+
+        <p>
+            Telegram:
+            {{ teacher.telegram }}
+        </p>
+
+    {% endif %}
+
+    <hr>
+
+</div>
+
+{% endfor %}
+
+{% endblock %}

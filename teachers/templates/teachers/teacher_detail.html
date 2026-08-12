@@ -1,0 +1,41 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+
+{% if teacher.photo %}
+    <img
+        src="{{ teacher.photo.url }}"
+        alt="{{ teacher.first_name }} {{ teacher.last_name }}"
+        width="250"
+    >
+{% endif %}
+
+<h1>
+    {{ teacher.first_name }}
+    {{ teacher.last_name }}
+</h1>
+
+<p>
+    ساز تخصصی:
+    {{ teacher.specialty }}
+</p>
+
+<p>
+    {{ teacher.bio }}
+</p>
+
+{% if teacher.instagram %}
+<p>
+    Instagram:
+    {{ teacher.instagram }}
+</p>
+{% endif %}
+
+{% if teacher.telegram %}
+<p>
+    Telegram:
+    {{ teacher.telegram }}
+</p>
+{% endif %}
+
+{% endblock %}
