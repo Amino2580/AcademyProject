@@ -5,7 +5,7 @@ class Teacher(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     specialty = models.CharField(max_length=100)
-    bio = models.TextField()
+    bio = models.TextField(blank=True)
     instagram = models.CharField(max_length=100, blank=True)
     telegram = models.URLField(blank=True)
     email = models.EmailField(blank=True)

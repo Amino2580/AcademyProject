@@ -5,8 +5,37 @@ USER_SERVICE_URL = "http://localhost:8081/api/v1/user"
 
 
 def get_user_by_national_id(national_id):
-    response = requests.get(
-        f"{USER_SERVICE_URL}/users/{national_id}"
-    )
+    try:
+        response = requests.get(
+            f"{USER_SERVICE_URL}/users/{national_id}",
+            timeout=5
+        )
 
-    return response.json()
+    except requests.RequestException:
+        return {
+            "user": None,
+            "metaData": {
+                "status": {
+                    "statusCode": 503,
+                    "message": "User Service is unavailable"
+                }
+            }
+        }
+
+    data = response.json()
+
+    status = data.get("metaData", {}).get("status", {})
+    status_code = status.get("statusCode")
+
+    if status_code == 404:
+        return {
+            "user": None,
+            "metaData": {
+                "status": {
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+            }
+        }
+
+    return data
