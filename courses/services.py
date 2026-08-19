@@ -22,7 +22,18 @@ def get_user_by_national_id(national_id):
             }
         }
 
-    data = response.json()
+    try:
+        data = response.json()
+    except ValueError:
+        return {
+            "user": None,
+            "metaData": {
+                "status": {
+                    "statusCode": 502,
+                    "message": "Invalid response from User Service"
+                }
+            }
+        }
 
     status = data.get("metaData", {}).get("status", {})
     status_code = status.get("statusCode")

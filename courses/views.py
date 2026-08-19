@@ -157,7 +157,7 @@ def course_students_api(request, pk):
         if status_code != 200:
             return Response(
                 user_data,
-                status=status_code or 500
+                status=status_code or 502
             )
 
         # پیدا کردن کلاس‌های دیگر همین دانشجو
