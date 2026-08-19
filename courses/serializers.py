@@ -9,7 +9,6 @@ class CourseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "عنوان کلاس نمی‌تواند خالی باشد."
             )
-
         return value.strip()
 
     def validate(self, data):
@@ -19,48 +18,45 @@ class CourseSerializer(serializers.ModelSerializer):
         teacher = data.get("teacher")
         room = data.get("room")
 
-        # بررسی کامل بودن اطلاعات زمان‌بندی
-        if not day or not start_time or not end_time or not room:
-            raise serializers.ValidationError(
-                "روز، ساعت شروع، ساعت پایان و اتاق کلاس الزامی هستند."
-            )
+        required_fields = {
+            "day": day,
+            "start_time": start_time,
+            "end_time": end_time,
+            "room": room
+        }
+        
+        for field_name, field_value in required_fields.items():
+            if field_value is None or field_value == "":
+                raise serializers.ValidationError(
+                    {field_name: f"فیلد {field_name} الزامی است."}
+                )
 
-        # ساعت شروع باید قبل از پایان باشد
         if start_time >= end_time:
             raise serializers.ValidationError(
                 "ساعت شروع باید قبل از ساعت پایان باشد."
             )
 
-        # کلاس‌های موجود در همان روز
         existing_courses = Course.objects.filter(
             day=day,
             is_active=True
         )
 
-        # در PATCH خود کلاس را از بررسی خارج می‌کنیم
         if self.instance:
             existing_courses = existing_courses.exclude(
                 pk=self.instance.pk
             )
 
-        # بررسی تداخل زمانی
         overlapping_courses = existing_courses.filter(
             start_time__lt=end_time,
             end_time__gt=start_time
         )
 
-        # تداخل استاد
-        if overlapping_courses.filter(
-            teacher=teacher
-        ).exists():
+        if teacher is not None and overlapping_courses.filter(teacher=teacher).exists():
             raise serializers.ValidationError(
                 "این استاد در این ساعت کلاس دیگری دارد."
             )
 
-        # تداخل اتاق
-        if overlapping_courses.filter(
-            room=room
-        ).exists():
+        if room is not None and overlapping_courses.filter(room=room).exists():
             raise serializers.ValidationError(
                 "این اتاق در این ساعت اشغال است."
             )
