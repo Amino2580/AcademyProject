@@ -12,54 +12,51 @@ class CourseSerializer(serializers.ModelSerializer):
         return value.strip()
 
     def validate(self, data):
-        day = data.get("day")
-        start_time = data.get("start_time")
-        end_time = data.get("end_time")
-        teacher = data.get("teacher")
-        room = data.get("room")
+        instance = self.instance
 
-        required_fields = {
-            "day": day,
-            "start_time": start_time,
-            "end_time": end_time,
-            "room": room
-        }
-        
-        for field_name, field_value in required_fields.items():
-            if field_value is None or field_value == "":
+        day = data.get("day") if "day" in data else (instance.day if instance else None)
+        start_time = data.get("start_time") if "start_time" in data else (instance.start_time if instance else None)
+        end_time = data.get("end_time") if "end_time" in data else (instance.end_time if instance else None)
+        room = data.get("room") if "room" in data else (instance.room if instance else None)
+        teacher = data.get("teacher") if "teacher" in data else (instance.teacher_id if instance else None)
+
+        if not instance:
+            if not day or not start_time or not end_time or not room:
                 raise serializers.ValidationError(
-                    {field_name: f"فیلد {field_name} الزامی است."}
+                    "روز، ساعت شروع، ساعت پایان و اتاق کلاس الزامی هستند."
                 )
 
-        if start_time >= end_time:
+
+        if start_time and end_time and start_time >= end_time:
             raise serializers.ValidationError(
                 "ساعت شروع باید قبل از ساعت پایان باشد."
             )
 
-        existing_courses = Course.objects.filter(
-            day=day,
-            is_active=True
-        )
-
-        if self.instance:
-            existing_courses = existing_courses.exclude(
-                pk=self.instance.pk
+        if day and start_time and end_time and room:
+            existing_courses = Course.objects.filter(
+                day=day,
+                is_active=True
             )
 
-        overlapping_courses = existing_courses.filter(
-            start_time__lt=end_time,
-            end_time__gt=start_time
-        )
+            if instance:
+                existing_courses = existing_courses.exclude(pk=instance.pk)
 
-        if teacher is not None and overlapping_courses.filter(teacher=teacher).exists():
-            raise serializers.ValidationError(
-                "این استاد در این ساعت کلاس دیگری دارد."
+            overlapping_courses = existing_courses.filter(
+                start_time__lt=end_time,
+                end_time__gt=start_time
             )
 
-        if room is not None and overlapping_courses.filter(room=room).exists():
-            raise serializers.ValidationError(
-                "این اتاق در این ساعت اشغال است."
-            )
+            # تداخل استاد
+            if teacher and overlapping_courses.filter(teacher=teacher).exists():
+                raise serializers.ValidationError(
+                    "این استاد در این ساعت کلاس دیگری دارد."
+                )
+
+            # تداخل اتاق
+            if room and overlapping_courses.filter(room=room).exists():
+                raise serializers.ValidationError(
+                    "این اتاق در این ساعت اشغال است."
+                )
 
         return data
 
