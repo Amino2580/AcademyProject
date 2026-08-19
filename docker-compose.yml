@@ -1,22 +1,17 @@
 services:
-
   db:
     image: postgres:17
     container_name: academy-postgres
-
     environment:
-      POSTGRES_DB: academy_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 'Amin@2026Strong'
-
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     ports:
       - "5433:5432"
-
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d academy_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,22 +19,21 @@ services:
   web:
     build: .
     container_name: academy-django
-
     command: python manage.py runserver 0.0.0.0:8000
-
     environment:
-      POSTGRES_DB: academy_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 'Amin@2026Strong'
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
-
+      USER_SERVICE_URL: ${USER_SERVICE_URL}
     volumes:
       - .:/app
-
     ports:
       - "8000:8000"
-
     depends_on:
       db:
         condition: service_healthy
