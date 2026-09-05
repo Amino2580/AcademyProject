@@ -49,11 +49,14 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'drf_spectacular',
-    'corsheaders',  
+    'corsheaders',
 
     # Local apps
-    'teachers',
-    'courses',
+    'registrations',
+
+    # Legacy apps - temporarily disabled
+    # 'teachers',
+    # 'courses',
 ]
 
 MIDDLEWARE = [
