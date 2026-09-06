@@ -75,3 +75,51 @@ class RegistrationRequestCreateSerializer(serializers.ModelSerializer):
             )
 
         return phone
+
+
+class RegistrationRequestAdminSerializer(serializers.ModelSerializer):
+    fullName = serializers.CharField(
+        source="full_name",
+        read_only=True,
+    )
+
+    classType = serializers.CharField(
+        source="class_type",
+        read_only=True,
+    )
+
+    createdAt = serializers.DateTimeField(
+        source="created_at",
+        read_only=True,
+    )
+
+    updatedAt = serializers.DateTimeField(
+        source="updated_at",
+        read_only=True,
+    )
+
+    class Meta:
+        model = RegistrationRequest
+        fields = (
+            "id",
+            "fullName",
+            "phone",
+            "age",
+            "level",
+            "instrument",
+            "classType",
+            "message",
+            "status",
+            "createdAt",
+            "updatedAt",
+        )
+
+        read_only_fields = fields
+
+
+class RegistrationRequestStatusUpdateSerializer(
+    serializers.ModelSerializer
+):
+    class Meta:
+        model = RegistrationRequest
+        fields = ("status",)
