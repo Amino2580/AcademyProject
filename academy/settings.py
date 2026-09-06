@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 
     # Local apps
     'registrations',
+    'students',
 
     # Legacy apps - temporarily disabled
     # 'teachers',
