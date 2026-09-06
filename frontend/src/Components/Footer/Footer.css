@@ -1,0 +1,405 @@
+.footer {
+position: relative;
+
+margin-top: 0;
+
+padding: 70px 0 0;
+
+background:
+linear-gradient(
+180deg,
+#0f172a 0%,
+#080f1d 100%
+);
+
+color: #ffffff;
+
+direction: rtl;
+
+overflow: hidden;
+}
+
+/* =====================================
+FOOTER CONTAINER
+===================================== */
+
+.footer-container {
+
+width: min(1100px, 90%);
+
+margin: 0 auto;
+
+display: grid;
+
+grid-template-columns:
+1.5fr
+1fr
+1fr
+1fr;
+
+gap: 50px;
+
+padding-bottom: 55px;
+}
+
+/* =====================================
+BRAND
+===================================== */
+
+.footer-brand {
+
+display: flex;
+
+flex-direction: column;
+
+align-items: flex-start;
+}
+
+.footer-brand h2 {
+
+margin: 0 0 10px;
+
+font-family: inherit;
+
+font-size: 32px;
+
+font-weight: 600;
+
+color: #ffffff;
+
+letter-spacing: 1px;
+
+transition:
+color 0.3s ease,
+text-shadow 0.3s ease;
+}
+
+.footer-brand h2:hover {
+
+color: #38bdf8;
+
+text-shadow:
+0 0 20px rgba(56, 189, 248, 0.25);
+}
+
+.footer-brand p {
+
+margin: 0 0 15px;
+
+color: #38bdf8;
+
+font-size: 14px;
+}
+
+.footer-brand span {
+
+color:
+rgba(255, 255, 255, 0.4);
+
+font-size: 12px;
+
+line-height: 2;
+}
+
+/* =====================================
+FOOTER LINKS
+===================================== */
+
+.footer-links {
+
+display: flex;
+
+flex-direction: column;
+
+align-items: flex-start;
+
+gap: 12px;
+}
+
+.footer-links h3 {
+
+position: relative;
+
+margin: 0 0 12px;
+
+padding-bottom: 9px;
+
+color: #ffffff;
+
+font-size: 14px;
+
+font-weight: 500;
+}
+
+/* خط کوچک زیر عنوان */
+
+.footer-links h3::after {
+
+content: "";
+
+position: absolute;
+
+right: 0;
+
+bottom: 0;
+
+width: 30px;
+
+height: 2px;
+
+border-radius: 10px;
+
+background:
+linear-gradient(
+90deg,
+#38bdf8,
+#d4af37
+);
+}
+
+/* LINKS */
+
+.footer-links a {
+
+position: relative;
+
+color:
+rgba(255, 255, 255, 0.48);
+
+text-decoration: none;
+
+font-size: 12px;
+
+transition:
+color 0.3s ease,
+transform 0.3s ease;
+}
+
+.footer-links a:hover {
+
+color: #38bdf8;
+
+transform: translateX(-5px);
+}
+
+/* =====================================
+FOOTER BOTTOM
+===================================== */
+
+.footer-bottom {
+
+width: min(1100px, 90%);
+
+margin: 0 auto;
+
+padding: 20px 0;
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+direction: ltr;
+
+border-top:
+1px solid rgba(255, 255, 255, 0.06);
+
+color:
+rgba(255, 255, 255, 0.3);
+
+font-size: 10px;
+}
+
+/* =====================================
+HOVER BOTTOM
+===================================== */
+
+.footer-bottom span {
+
+transition:
+color 0.3s ease;
+}
+
+.footer-bottom span:hover {
+
+color:
+rgba(255, 255, 255, 0.65);
+}
+
+/* =====================================
+TABLET
+===================================== */
+
+@media (max-width: 850px) {
+
+.footer {
+
+
+padding-top: 55px;
+
+
+}
+
+.footer-container {
+
+
+grid-template-columns:
+  1fr 1fr;
+
+gap: 45px;
+
+
+}
+
+.footer-brand {
+
+
+grid-column:
+  1 / -1;
+
+align-items: center;
+
+text-align: center;
+
+
+}
+
+.footer-brand h2 {
+
+
+font-size: 30px;
+
+
+}
+
+.footer-links {
+
+
+align-items: center;
+
+text-align: center;
+
+
+}
+
+.footer-links h3::after {
+
+
+right: 50%;
+
+transform:
+  translateX(50%);
+
+
+}
+
+}
+
+/* =====================================
+MOBILE
+===================================== */
+
+@media (max-width: 550px) {
+
+.footer {
+
+
+padding-top: 50px;
+
+
+}
+
+.footer-container {
+
+
+width: 88%;
+
+grid-template-columns: 1fr;
+
+gap: 35px;
+
+padding-bottom: 40px;
+
+
+}
+
+.footer-brand {
+
+
+grid-column: auto;
+
+
+}
+
+.footer-brand h2 {
+
+
+font-size: 28px;
+
+
+}
+
+.footer-links {
+
+
+align-items: center;
+
+
+}
+
+.footer-links a {
+
+font-size: 13px;
+
+
+}
+
+.footer-bottom {
+
+width: 88%;
+
+flex-direction: column;
+
+gap: 10px;
+
+padding: 18px 0;
+
+text-align: center;
+
+
+}
+
+}
+
+/* =====================================
+SMALL MOBILE
+===================================== */
+
+@media (max-width: 380px) {
+
+.footer-brand h2 {
+
+
+font-size: 25px;
+
+
+}
+
+.footer-brand p {
+
+
+font-size: 13px;
+
+
+}
+
+.footer-brand span {
+
+
+font-size: 11px;
+
+
+}
+
+}

@@ -1,0 +1,502 @@
+.contact-page {
+
+min-height: 100vh;
+
+padding-top: 150px;
+
+padding-bottom: 100px;
+
+background:
+radial-gradient(
+circle at 75% 30%,
+rgba(56, 189, 248, 0.08),
+transparent 35%
+),
+#0f172a;
+
+color: #ffffff;
+}
+
+/* =====================================
+CONTAINER
+===================================== */
+
+.contact-container {
+
+width: min(1100px, 90%);
+
+margin: 0 auto;
+}
+
+/* =====================================
+HEADING
+===================================== */
+
+.contact-heading {
+
+text-align: center;
+
+margin-bottom: 65px;
+}
+
+.contact-heading span {
+
+color: #38bdf8;
+
+font-size: 13px;
+
+letter-spacing: 3px;
+}
+
+.contact-heading h1 {
+
+margin: 10px 0;
+
+font-size: 48px;
+
+font-weight: 600;
+}
+
+.contact-line {
+
+width: 80px;
+
+height: 2px;
+
+margin: 15px auto;
+
+background:
+linear-gradient(
+90deg,
+#d4af37,
+#38bdf8
+);
+}
+
+.contact-heading p {
+
+max-width: 520px;
+
+margin: 20px auto 0;
+
+color:
+rgba(226, 232, 240, 0.65);
+
+font-size: 14px;
+
+line-height: 2;
+}
+
+/* =====================================
+CONTENT
+===================================== */
+
+.contact-content {
+
+display: grid;
+
+grid-template-columns:
+0.8fr
+1.2fr;
+
+gap: 70px;
+
+align-items: stretch;
+
+direction: ltr;
+}
+
+/* =====================================
+INFO
+===================================== */
+
+.contact-info {
+
+direction: rtl;
+
+display: flex;
+
+flex-direction: column;
+
+justify-content: center;
+
+gap: 28px;
+}
+
+.contact-item {
+
+display: flex;
+
+align-items: flex-start;
+
+gap: 16px;
+}
+
+.contact-icon {
+
+width: 42px;
+
+height: 42px;
+
+flex-shrink: 0;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+border:
+1px solid rgba(56, 189, 248, 0.25);
+
+border-radius: 12px;
+
+background:
+rgba(56, 189, 248, 0.06);
+
+font-size: 18px;
+}
+
+.contact-item span {
+
+display: block;
+
+margin-bottom: 5px;
+
+color:
+rgba(255, 255, 255, 0.4);
+
+font-size: 11px;
+}
+
+.contact-item p,
+.contact-item a {
+
+margin: 0;
+
+color:
+rgba(255, 255, 255, 0.82);
+
+font-size: 14px;
+
+line-height: 1.9;
+
+text-decoration: none;
+}
+
+.contact-item a:hover {
+
+color: #38bdf8;
+}
+
+/* =====================================
+MAP BUTTON
+===================================== */
+
+.map-button {
+
+width: fit-content;
+
+margin-top: 15px;
+
+padding: 13px 22px;
+
+display: flex;
+
+align-items: center;
+
+gap: 12px;
+
+color: #ffffff;
+
+background:
+linear-gradient(
+135deg,
+rgba(56, 189, 248, 0.18),
+rgba(212, 175, 55, 0.10)
+);
+
+border:
+1px solid rgba(56, 189, 248, 0.25);
+
+border-radius: 12px;
+
+text-decoration: none;
+
+font-size: 13px;
+
+transition:
+transform 0.3s ease,
+border-color 0.3s ease,
+background 0.3s ease;
+}
+
+.map-button:hover {
+
+transform: translateY(-3px);
+
+border-color:
+rgba(56, 189, 248, 0.6);
+
+background:
+rgba(56, 189, 248, 0.12);
+}
+
+/* =====================================
+MAP CARD
+===================================== */
+
+.map-card {
+
+position: relative;
+
+min-height: 430px;
+
+overflow: hidden;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+border:
+1px solid rgba(255, 255, 255, 0.08);
+
+border-radius: 24px;
+
+text-decoration: none;
+
+background:
+
+radial-gradient(
+  circle at 50% 45%,
+  rgba(56, 189, 248, 0.16),
+  transparent 25%
+),
+
+linear-gradient(
+  135deg,
+  #111c31,
+  #0b1220
+);
+
+
+box-shadow:
+0 25px 70px rgba(0, 0, 0, 0.4);
+
+transition:
+transform 0.5s ease,
+border-color 0.5s ease;
+}
+
+.map-card::before {
+
+content: "";
+
+position: absolute;
+
+inset: 0;
+
+background-image:
+
+
+linear-gradient(
+  rgba(255,255,255,0.025) 1px,
+  transparent 1px
+),
+
+linear-gradient(
+  90deg,
+  rgba(255,255,255,0.025) 1px,
+  transparent 1px
+);
+
+
+background-size: 45px 45px;
+
+opacity: 0.7;
+}
+
+.map-card:hover {
+
+transform: translateY(-6px);
+
+border-color:
+rgba(56, 189, 248, 0.4);
+}
+
+/* =====================================
+MAP CONTENT
+===================================== */
+
+.map-overlay {
+
+position: relative;
+
+z-index: 2;
+
+text-align: center;
+
+direction: rtl;
+}
+
+.map-pin {
+
+width: 70px;
+
+height: 70px;
+
+margin: 0 auto 20px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+border-radius: 50%;
+
+background:
+rgba(56, 189, 248, 0.1);
+
+border:
+1px solid rgba(56, 189, 248, 0.3);
+
+font-size: 30px;
+
+box-shadow:
+0 0 40px rgba(56, 189, 248, 0.15);
+
+transition:
+transform 0.4s ease;
+}
+
+.map-card:hover .map-pin {
+
+transform:
+translateY(-6px)
+scale(1.05);
+}
+
+.map-overlay h3 {
+
+margin: 0 0 8px;
+
+color: #ffffff;
+
+font-size: 20px;
+
+font-weight: 500;
+}
+
+.map-overlay p {
+
+margin: 0 0 15px;
+
+color:
+rgba(255, 255, 255, 0.6);
+
+font-size: 13px;
+}
+
+.map-overlay span {
+
+color: #38bdf8;
+
+font-size: 11px;
+}
+
+/* =====================================
+MOBILE
+===================================== */
+
+@media (max-width: 800px) {
+
+.contact-page {
+
+padding-top: 120px;
+
+
+}
+
+.contact-heading h1 {
+
+
+font-size: 38px;
+
+
+}
+
+.contact-content {
+
+
+grid-template-columns: 1fr;
+
+gap: 50px;
+
+
+}
+
+.contact-info {
+
+
+order: 2;
+
+
+}
+
+.map-card {
+
+
+order: 1;
+
+min-height: 330px;
+
+
+}
+
+}
+
+/* =====================================
+SMALL MOBILE
+===================================== */
+
+@media (max-width: 450px) {
+
+.contact-heading h1 {
+
+
+font-size: 32px;
+
+
+}
+
+.contact-heading p {
+
+
+font-size: 13px;
+
+
+}
+
+.contact-item p,
+.contact-item a {
+
+
+font-size: 13px;
+
+
+}
+
+.map-card {
+
+
+min-height: 280px;
+
+border-radius: 18px;
+
+
+}
+
+}

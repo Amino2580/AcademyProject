@@ -1,0 +1,599 @@
+
+* {
+  box-sizing: border-box;
+  }
+
+/* =====================================
+NAVBAR
+===================================== */
+
+.navbar {
+position: fixed;
+
+top: 25px;
+left: 0;
+
+width: 100%;
+
+z-index: 9999;
+
+background: transparent;
+}
+
+/* =====================================
+CONTENT
+===================================== */
+
+.navbar-content {
+
+width: fit-content;
+
+max-width: 95%;
+
+min-height: 85px;
+
+margin: 0 auto;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+gap: 0;
+}
+
+/* =====================================
+RIGHT SIDE
+===================================== */
+
+.navbar-right {
+
+display: flex;
+
+align-items: center;
+
+direction: rtl;
+
+gap: 35px;
+
+margin-right: 25px;
+}
+
+/* =====================================
+LOGO
+===================================== */
+
+.navbar-logo {
+
+position: relative;
+
+width: 230px;
+
+height: 85px;
+
+display: flex;
+
+flex-direction: column;
+
+align-items: center;
+
+justify-content: center;
+
+text-decoration: none;
+
+flex-shrink: 0;
+}
+
+.logo-small {
+
+margin-bottom: -5px;
+
+font-family: Arial, sans-serif;
+
+font-size: 8px;
+
+letter-spacing: 8px;
+
+color: #38bdf8;
+
+opacity: 0.85;
+}
+
+.logo-name {
+
+font-family: "Noto Nastaliq Urdu", serif;
+
+font-size: 34px;
+
+font-weight: 400;
+
+line-height: 1.6;
+
+color: #ffffff;
+
+white-space: nowrap;
+
+text-shadow:
+0 3px 20px rgba(0, 0, 0, 0.5);
+
+transition:
+color 0.35s ease,
+transform 0.35s ease;
+}
+
+.navbar-logo:hover .logo-name {
+
+color: #38bdf8;
+
+transform: scale(1.04);
+}
+
+.logo-line {
+
+width: 40px;
+
+height: 1px;
+
+margin-top: 2px;
+
+background: #38bdf8;
+
+box-shadow:
+0 0 10px rgba(56, 189, 248, 0.8);
+
+transition:
+width 0.35s ease;
+}
+
+.navbar-logo:hover .logo-line {
+
+width: 75px;
+}
+
+/* =====================================
+LEFT SIDE
+===================================== */
+
+.navbar-left {
+
+display: flex;
+
+align-items: center;
+
+direction: ltr;
+
+gap: 35px;
+
+margin-left: 25px;
+}
+
+/* =====================================
+LINKS
+===================================== */
+
+.nav-link {
+
+position: relative;
+
+height: 70px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+gap: 6px;
+
+padding: 0;
+
+border: none;
+
+background: transparent;
+
+color:
+rgba(255, 255, 255, 0.82);
+
+text-decoration: none;
+
+font-size: 15px;
+
+font-weight: 500;
+
+white-space: nowrap;
+
+cursor: pointer;
+
+transition:
+color 0.3s ease,
+transform 0.3s ease;
+}
+
+.nav-link:hover {
+
+color: #ffffff;
+
+transform: translateY(-2px);
+}
+
+/* =====================================
+UNDERLINE
+===================================== */
+
+.nav-link::after {
+
+content: "";
+
+position: absolute;
+
+bottom: 8px;
+
+left: 50%;
+
+width: 0;
+
+height: 1px;
+
+background: #38bdf8;
+
+transform:
+translateX(-50%);
+
+box-shadow:
+0 0 8px rgba(56, 189, 248, 0.8);
+
+transition:
+width 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+
+width: 70%;
+}
+
+.nav-link.active {
+
+color: #38bdf8;
+}
+
+/* =====================================
+DROPDOWN
+===================================== */
+
+.nav-dropdown {
+
+position: relative;
+
+height: 70px;
+
+display: flex;
+
+align-items: center;
+}
+
+/* =====================================
+ARROW
+===================================== */
+
+.arrow {
+
+margin-right: 5px;
+
+font-size: 10px;
+
+color:
+rgba(255, 255, 255, 0.45);
+
+transition:
+color 0.3s ease;
+}
+
+.nav-button:hover .arrow {
+
+color: #38bdf8;
+}
+
+/* =====================================
+SUBMENU
+===================================== */
+
+.submenu {
+
+position: absolute;
+
+top: 65px;
+
+left: 50%;
+
+transform:
+translateX(-50%);
+
+min-width: 210px;
+
+padding: 8px;
+
+display: flex;
+
+flex-direction: column;
+
+gap: 3px;
+
+direction: rtl;
+
+background:
+rgba(8, 15, 30, 0.92);
+
+border:
+1px solid rgba(255, 255, 255, 0.1);
+
+border-radius: 15px;
+
+box-shadow:
+0 18px 45px rgba(0, 0, 0, 0.4);
+
+backdrop-filter: blur(15px);
+
+-webkit-backdrop-filter: blur(15px);
+
+animation:
+submenuIn 0.25s ease;
+}
+
+.submenu a {
+
+padding: 12px 16px;
+
+border-radius: 9px;
+
+color:
+rgba(255, 255, 255, 0.78);
+
+text-decoration: none;
+
+text-align: center;
+
+font-family:
+"Noto Naskh Arabic",
+sans-serif;
+
+font-size: 13px;
+
+transition:
+color 0.25s ease,
+background 0.25s ease;
+}
+
+.submenu a:hover {
+
+color: #38bdf8;
+
+background:
+rgba(56, 189, 248, 0.08);
+}
+
+/* =====================================
+ANIMATION
+===================================== */
+
+@keyframes submenuIn {
+
+from {
+
+
+opacity: 0;
+
+transform:
+  translateX(-50%)
+  translateY(-8px);
+
+
+}
+
+to {
+
+
+opacity: 1;
+
+transform:
+  translateX(-50%)
+  translateY(0);
+
+
+}
+
+}
+
+/* =====================================
+TABLET
+===================================== */
+
+@media (max-width: 950px) {
+
+.navbar-right {
+
+
+gap: 20px;
+
+margin-right: 15px;
+
+
+}
+
+.navbar-left {
+
+
+gap: 20px;
+
+margin-left: 15px;
+
+
+}
+
+.navbar-logo {
+
+
+width: 190px;
+
+
+}
+
+.logo-name {
+
+
+font-size: 27px;
+
+
+}
+
+.nav-link {
+
+
+font-size: 13px;
+
+
+}
+}
+
+/* =====================================
+MOBILE
+===================================== */
+
+@media (max-width: 700px) {
+
+.navbar {
+
+
+top: 10px;
+
+
+}
+
+.navbar-content {
+
+
+width: 98%;
+
+max-width: 98%;
+
+
+}
+
+.navbar-right {
+
+
+gap: 8px;
+
+margin-right: 5px;
+
+
+}
+
+.navbar-left {
+
+
+gap: 8px;
+
+margin-left: 5px;
+
+
+}
+
+.navbar-logo {
+
+
+width: 120px;
+
+height: 70px;
+
+
+}
+
+.logo-name {
+
+
+font-size: 19px;
+
+
+}
+
+.logo-small {
+display: none;
+
+
+}
+
+.logo-line {
+
+
+width: 25px;
+
+
+}
+
+.nav-link {
+
+
+height: 60px;
+
+font-size: 9px;
+
+
+}
+
+.submenu {
+
+
+min-width: 160px;
+
+top: 58px;
+
+
+}
+}
+
+/* =====================================
+SMALL MOBILE
+===================================== */
+
+@media (max-width: 450px) {
+
+.navbar-right,
+.navbar-left {
+
+
+gap: 4px;
+
+
+}
+
+.navbar-logo {
+
+width: 100px;
+
+
+}
+
+.logo-name {
+
+
+font-size: 16px;
+
+
+}
+
+.nav-link {
+
+
+font-size: 8px;
+
+
+}
+
+.arrow {
+
+font-size: 8px;
+
+}
+}

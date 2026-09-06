@@ -1,0 +1,25 @@
+.page {
+  min-height: 100vh;
+
+  padding: 150px 8% 120px;
+
+  background: #0f172a;
+
+  color: white;
+}
+
+.page h1 {
+  margin-bottom: 20px;
+
+  color: #38bdf8;
+
+  font-size: 48px;
+}
+
+.page p {
+  color: #cbd5e1;
+
+  font-size: 18px;
+
+  line-height: 2;
+}
