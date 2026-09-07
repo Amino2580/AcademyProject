@@ -1,14 +1,35 @@
+# Python
 env/
+venv/
+.venv/
 __pycache__/
-*.pyc
-.env
-db.sqlite3
-.vscode/
-.idea/
+*.py[cod]
+
 # Environment variables
 .env
-.env.local
-.env.production
-# Logs
+.env.*
+!.env.example
+
+# Django
+db.sqlite3
+*.sqlite3
 logs/
+staticfiles/
+media/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Docker archives
+*.tar
+
+# Editors
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
 *.log

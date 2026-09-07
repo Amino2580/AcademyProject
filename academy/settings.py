@@ -19,6 +19,8 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ==================== SECURITY ====================
@@ -31,12 +33,19 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:8000').split(',')
+CORS_ALLOWED_ORIGINS = os.getenv(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173",
+).split(",")
+
 CORS_ALLOW_CREDENTIALS = True
 
 
 # CORS_ALLOW_ALL_ORIGINS = False
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://localhost:8000').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "CSRF_TRUSTED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173",
+).split(",")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -176,7 +185,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
+            'filename': LOG_DIR / 'django.log',
             'formatter': 'verbose',
         },
     },
