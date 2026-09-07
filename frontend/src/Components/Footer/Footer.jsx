@@ -38,14 +38,6 @@ function Footer() {
             درباره استاد
           </Link>
 
-          <Link to="/courses">
-            همراه با موسیقی
-          </Link>
-
-          <Link to="/gallery">
-            گالری
-          </Link>
-
           <Link to="/contact">
             تماس با ما
           </Link>
@@ -84,22 +76,6 @@ function Footer() {
             ویدئوهای استاد
           </Link>
 
-          <a
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            آپارات
-          </a>
-
-          <a
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            یوتیوب
-          </a>
-
         </div>
 
       </div>
@@ -112,7 +88,7 @@ function Footer() {
         </span>
 
         <span>
-          طراحی و توسعه با ♫
+          طراحی و توسعه با نبض تک
         </span>
 
       </div>

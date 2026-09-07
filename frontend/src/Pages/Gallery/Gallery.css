@@ -1,25 +1,57 @@
-.page {
+.gallery-page {
   min-height: 100vh;
-
-  padding: 150px 8% 120px;
-
   background: #0f172a;
+  color: white;
+  padding: 120px 30px;
+}
 
+.gallery-header {
+  text-align: center;
+}
+
+.gallery-header span {
+  color: #38bdf8;
+}
+
+.gallery-header h1 {
+  font-size: 45px;
+  margin: 15px 0;
+}
+
+.gallery-grid {
+  max-width: 1200px;
+  margin: 50px auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.gallery-card {
+  background: #1e293b;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.gallery-image {
+  width: 100%;
+  height: 370px;
+}
+
+.gallery-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-content {
+  padding: 20px;
+}
+
+.gallery-content h2 {
   color: white;
 }
 
-.page h1 {
-  margin-bottom: 20px;
-
-  color: #38bdf8;
-
-  font-size: 48px;
-}
-
-.page p {
-  color: #cbd5e1;
-
-  font-size: 18px;
-
-  line-height: 2;
+.gallery-content p {
+  color: #94a3b8;
+  line-height: 1.8;
 }

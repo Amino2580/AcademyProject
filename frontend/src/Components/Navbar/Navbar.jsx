@@ -1,169 +1,67 @@
-import { useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
 
+import mt from "../../assets/MT.jpg";
+
 function Navbar() {
-const [musicOpen, setMusicOpen] = useState(false);
-const [galleryOpen, setGalleryOpen] = useState(false);
+  const location = useLocation();
 
-const closeMenus = () => {
-setMusicOpen(false);
-setGalleryOpen(false);
-};
+  const menuItems = [
+    { title: "خانه", path: "/" },
+    { title: "درباره استاد", path: "/about" },
+    { title: "ثبت نام در کلاس", path: "/register" },
+    { title: "تصاویر", path: "/gallery" },
+    { title: "ویدئوها", path: "/videos" },
+    { title: "برنامه کلاسی", path: "/schedule" },
+    { title: "تماس با ما", path: "/contact" },
+  ];
 
-return ( <nav className="navbar">
+  return (
+    <header className="navbar-wrapper">
+      <nav className="navbar">
 
-```
-  <div className="navbar-content">
-
-    {/* خانه و درباره استاد */}
-
-    <div className="navbar-right">
-
-      <NavLink
-        to="/"
-        className="nav-link"
-        onClick={closeMenus}
-      >
-        خانه
-      </NavLink>
-
-      <NavLink
-        to="/about"
-        className="nav-link"
-        onClick={closeMenus}
-      >
-        درباره استاد
-      </NavLink>
-
-    </div>
-
-
-    {/* لوگوی وسط */}
-
-    <Link
-      to="/"
-      className="navbar-logo"
-      onClick={closeMenus}
-    >
-      <span className="logo-small">
-        PIANO
-      </span>
-
-      <span className="logo-name">
-        میلاد طریقت
-      </span>
-
-      <span className="logo-line"></span>
-    </Link>
-
-
-    {/* موسیقی - گالری - تماس */}
-
-    <div className="navbar-left">
-
-      {/* موسیقی */}
-
-      <div className="nav-dropdown">
-
-        <button
-          type="button"
-          className="nav-link nav-button"
-          onClick={() => {
-            setMusicOpen(!musicOpen);
-            setGalleryOpen(false);
-          }}
-        >
-          همراه با موسیقی
-
-          <span className="arrow">
-            {musicOpen ? "⌃" : "⌄"}
-          </span>
-        </button>
-
-        {musicOpen && (
-          <div className="submenu">
-
+        {/* منوی سمت راست */}
+        <div className="navbar-side navbar-right">
+          {menuItems.slice(0, 3).map((item) => (
             <Link
-              to="/schedule"
-              onClick={closeMenus}
+              key={item.path}
+              to={item.path}
+              className={
+                location.pathname === item.path
+                  ? "nav-link active"
+                  : "nav-link"
+              }
             >
-              برنامه کلاسی
+              {item.title}
             </Link>
+          ))}
+        </div>
 
+        {/* لوگو */}
+        <Link to="/" className="navbar-logo">
+          <img src={mt} alt="Milad Tarighat" />
+        </Link>
+
+        {/* منوی سمت چپ */}
+        <div className="navbar-side navbar-left">
+          {menuItems.slice(3).map((item) => (
             <Link
-              to="/register"
-              onClick={closeMenus}
+              key={item.path}
+              to={item.path}
+              className={
+                location.pathname === item.path
+                  ? "nav-link active"
+                  : "nav-link"
+              }
             >
-              ثبت‌نام در کلاس‌ها
+              {item.title}
             </Link>
+          ))}
+        </div>
 
-          </div>
-        )}
-
-      </div>
-
-
-      {/* گالری */}
-
-      <div className="nav-dropdown">
-
-        <button
-          type="button"
-          className="nav-link nav-button"
-          onClick={() => {
-            setGalleryOpen(!galleryOpen);
-            setMusicOpen(false);
-          }}
-        >
-          گالری
-
-          <span className="arrow">
-            {galleryOpen ? "⌃" : "⌄"}
-          </span>
-        </button>
-
-        {galleryOpen && (
-          <div className="submenu">
-
-            <Link
-              to="/gallery"
-              onClick={closeMenus}
-            >
-              تصاویر
-            </Link>
-
-            <Link
-              to="/videos"
-              onClick={closeMenus}
-            >
-              ویدئوها
-            </Link>
-
-          </div>
-        )}
-
-      </div>
-
-
-      {/* تماس با ما */}
-
-      <NavLink
-        to="/contact"
-        className="nav-link"
-        onClick={closeMenus}
-      >
-        تماس با ما
-      </NavLink>
-
-    </div>
-
-  </div>
-
-</nav>
-
-
-);
+      </nav>
+    </header>
+  );
 }
 
 export default Navbar;

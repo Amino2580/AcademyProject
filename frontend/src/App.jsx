@@ -1,35 +1,72 @@
+import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./Pages/Home/Home";
 import About from "./Pages/About/About";
 import Videos from "./Pages/Videos/Videos";
+import Gallery from "./Pages/Gallery/Gallery";;
 import Contact from "./Pages/Contact/Contact";
 import Register from "./Pages/Register/Register";
 
-import Dashboard from "./Pages/Admin/Dashboard/Dashboard";
 import Login from "./Pages/Admin/Login/Login";
+import Dashboard from "./Pages/Admin/Dashboard/Dashboard";
 import Students from "./Pages/Admin/Students/Students";
 import Schedule from "./Pages/Admin/Schedule/Schedule";
 
 import Navbar from "./Components/Navbar/Navbar";
 import Footer from "./Components/Footer/Footer";
+import SideMenu from "./Components/SideMenu/SideMenu";
+import RegisterModal from "./Components/RegisterModal/RegisterModal";
 
 import "./App.css";
 
 function App() {
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+
   return (
     <BrowserRouter>
       <Routes>
+        <Route
+  path="/schedule"
+  element={<Schedule />}
+/>
+        <Route
+       path="/gallery"
+       element={
+    <>
+      <SideMenu />
+      <Navbar />
+      <Gallery />
+      <Footer />
 
-        {/* ================= سایت اصلی ================= */}
-
+      <button
+        className="floating-register-btn"
+        onClick={() => setIsRegisterOpen(true)}
+       >
+        ثبت نام کلاس
+       </button>
+        </>
+         }
+       />
+        {/* صفحات اصلی */}
         <Route
           path="/"
           element={
             <>
+              <SideMenu />
               <Navbar />
+
               <Home />
+
               <Footer />
+
+              {/* دکمه ثبت نام */}
+              <button
+                className="floating-register-btn"
+                onClick={() => setIsRegisterOpen(true)}
+              >
+                ثبت نام کلاس
+              </button>
             </>
           }
         />
@@ -38,9 +75,19 @@ function App() {
           path="/about"
           element={
             <>
+              <SideMenu />
               <Navbar />
+
               <About />
+
               <Footer />
+
+              <button
+                className="floating-register-btn"
+                onClick={() => setIsRegisterOpen(true)}
+              >
+                ثبت نام کلاس
+              </button>
             </>
           }
         />
@@ -49,9 +96,19 @@ function App() {
           path="/videos"
           element={
             <>
+              <SideMenu />
               <Navbar />
+
               <Videos />
+
               <Footer />
+
+              <button
+                className="floating-register-btn"
+                onClick={() => setIsRegisterOpen(true)}
+              >
+                ثبت نام کلاس
+              </button>
             </>
           }
         />
@@ -60,9 +117,19 @@ function App() {
           path="/contact"
           element={
             <>
+              <SideMenu />
               <Navbar />
+
               <Contact />
+
               <Footer />
+
+              <button
+                className="floating-register-btn"
+                onClick={() => setIsRegisterOpen(true)}
+              >
+                ثبت نام کلاس
+              </button>
             </>
           }
         />
@@ -71,15 +138,24 @@ function App() {
           path="/register"
           element={
             <>
+              <SideMenu />
               <Navbar />
+
               <Register />
+
               <Footer />
+
+              <button
+                className="floating-register-btn"
+                onClick={() => setIsRegisterOpen(true)}
+              >
+                ثبت نام کلاس
+              </button>
             </>
           }
         />
 
-        {/* ================= پنل ادمین ================= */}
-
+        {/* پنل مدیریت */}
         <Route
           path="/admin/login"
           element={<Login />}
@@ -101,6 +177,13 @@ function App() {
         />
 
       </Routes>
+
+      {/* Modal ثبت نام */}
+      <RegisterModal
+        isOpen={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
+      />
+
     </BrowserRouter>
   );
 }

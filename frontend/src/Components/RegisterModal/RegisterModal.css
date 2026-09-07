@@ -1,0 +1,221 @@
+/* ================= MODAL OVERLAY ================= */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0, 0, 0, 0.75);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 9999;
+
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+
+/* ================= MODAL ================= */
+
+.register-modal {
+  position: relative;
+
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+
+  overflow-y: auto;
+
+  background: #0f172a;
+
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 20px;
+
+  padding: 35px;
+
+  box-sizing: border-box;
+
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+
+/* ================= CLOSE BUTTON ================= */
+
+.modal-close {
+  position: absolute;
+
+  top: 12px;
+  right: 15px;
+
+  width: 35px;
+  height: 35px;
+
+  border: none;
+  background: transparent;
+
+  color: white;
+
+  font-size: 28px;
+
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+.modal-close:hover {
+  color: #38bdf8;
+  transform: rotate(90deg);
+}
+
+
+/* ================= TITLE ================= */
+
+.register-modal h2 {
+  margin: 0 0 8px;
+
+  color: white;
+
+  text-align: center;
+
+  font-size: 26px;
+}
+
+
+/* ================= DESCRIPTION ================= */
+
+.modal-description {
+  margin-bottom: 25px;
+
+  color: rgba(255, 255, 255, 0.65);
+
+  text-align: center;
+
+  font-size: 14px;
+}
+
+
+/* ================= FORM ================= */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+
+  margin-bottom: 18px;
+}
+
+
+.form-group label {
+  margin-bottom: 7px;
+
+  color: white;
+
+  font-size: 14px;
+}
+
+
+/* ================= INPUT ================= */
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+
+  padding: 12px 14px;
+
+  box-sizing: border-box;
+
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  border-radius: 10px;
+
+  outline: none;
+
+  background: rgba(255, 255, 255, 0.06);
+
+  color: white;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  transition: 0.3s;
+}
+
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #38bdf8;
+
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.1);
+}
+
+
+.form-group textarea {
+  resize: vertical;
+}
+
+
+.form-group select option {
+  background: #0f172a;
+  color: white;
+}
+
+
+/* ================= SUBMIT BUTTON ================= */
+
+.submit-register {
+  width: 100%;
+
+  padding: 13px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: #38bdf8;
+
+  color: #0f172a;
+
+  font-family: inherit;
+
+  font-size: 15px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+
+.submit-register:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 25px rgba(56, 189, 248, 0.3);
+}
+
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 15px;
+  }
+
+  .register-modal {
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
+
+  .register-modal h2 {
+    font-size: 22px;
+  }
+}

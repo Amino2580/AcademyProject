@@ -1,0 +1,27 @@
+.register-button {
+  position: fixed;
+  right: 45px;
+  bottom: 40px;
+
+  z-index: 999;
+
+  padding: 13px 28px;
+
+  border: none;
+  border-radius: 30px;
+
+  background: #38bdf8;
+  color: #0f172a;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.3s ease;
+}
+
+.register-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(56, 189, 248, 0.35);
+}

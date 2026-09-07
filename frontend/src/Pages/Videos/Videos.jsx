@@ -110,7 +110,7 @@ return ( <main className="videos-page">
       <div className="video-links">
 
         <a
-          href="#"
+          href="https://www.aparat.com/search/%D9%85%DB%8C%D9%84%D8%A7%D8%AF%20%D8%B7%D8%B1%DB%8C%D9%82%D8%AA"
           target="_blank"
           rel="noopener noreferrer"
           className="video-link aparat"
@@ -124,7 +124,7 @@ return ( <main className="videos-page">
 
 
         <a
-          href="www.aparat.com/search/%D9%85%DB%8C%D9%84%D8%A7%D8%AF%20%D8%B7%D8%B1%DB%8C%D9%82%D8%AA"
+          href=""
           target="_blank"
           rel="noopener noreferrer"
           className="video-link youtube"
