@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./Pages/Home/Home";
 import About from "./Pages/About/About";
 import Videos from "./Pages/Videos/Videos";
-import Gallery from "./Pages/Gallery/Gallery";;
+import Gallery from "./Pages/Gallery/Gallery";
 import Contact from "./Pages/Contact/Contact";
 import Register from "./Pages/Register/Register";
 
@@ -17,7 +17,7 @@ import Navbar from "./Components/Navbar/Navbar";
 import Footer from "./Components/Footer/Footer";
 import SideMenu from "./Components/SideMenu/SideMenu";
 import RegisterModal from "./Components/RegisterModal/RegisterModal";
-
+import ProtectedRoute from "./Components/Admin/ProtectedRoute/ProtectedRoute.jsx";
 import "./App.css";
 
 function App() {
@@ -156,25 +156,28 @@ function App() {
         />
 
         {/* پنل مدیریت */}
+
         <Route
           path="/admin/login"
           element={<Login />}
         />
 
-        <Route
-          path="/admin"
-          element={<Dashboard />}
-        />
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/admin"
+            element={<Dashboard />}
+          />
 
-        <Route
-          path="/admin/students"
-          element={<Students />}
-        />
+          <Route
+            path="/admin/students"
+            element={<Students />}
+          />
 
-        <Route
-          path="/admin/schedule"
-          element={<Schedule />}
-        />
+          <Route
+            path="/admin/schedule"
+            element={<Schedule />}
+          />
+        </Route>
 
       </Routes>
 

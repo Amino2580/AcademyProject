@@ -1,13 +1,22 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
+import {
+  logout,
+} from "../../../services/auth";
 
 function Sidebar() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    navigate("/admin/login");
-  };
+  const handleLogout = async () => {
+    await logout();
+
+    navigate(
+      "/admin/login",
+    {
+      replace: true,
+    }
+  );
+};
 
   return (
     <aside className="admin-sidebar">
