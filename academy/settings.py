@@ -177,6 +177,33 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+OTP_EXPIRY_SECONDS = int(
+    os.getenv("OTP_EXPIRY_SECONDS", "120")
+)
+
+OTP_RESEND_COOLDOWN_SECONDS = int(
+    os.getenv("OTP_RESEND_COOLDOWN_SECONDS", "60")
+)
+
+OTP_MAX_ATTEMPTS = int(
+    os.getenv("OTP_MAX_ATTEMPTS", "5")
+)
+
+OTP_DELIVERY_BACKEND = os.getenv(
+    "OTP_DELIVERY_BACKEND",
+    "console",
+).lower()
+
+KAVENEGAR_API_KEY = os.getenv(
+    "KAVENEGAR_API_KEY",
+    "",
+)
+
+KAVENEGAR_VERIFY_TEMPLATE = os.getenv(
+    "KAVENEGAR_VERIFY_TEMPLATE",
+    "",
+)
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Music Academy API',
     'DESCRIPTION': 'API for Music Academy',
