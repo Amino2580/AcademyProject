@@ -16,6 +16,7 @@ from rest_framework.permissions import (
     IsAuthenticated,
 )
 from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import UserProfile
@@ -25,6 +26,8 @@ from .serializers import (
     OTPRequestSerializer,
     OTPVerifyResponseSerializer,
     OTPVerifySerializer,
+    LogoutSerializer,
+    MessageResponseSerializer,
 )
 from .services import (
     InvalidOTPCode,
@@ -253,5 +256,64 @@ class CurrentUserView(GenericAPIView):
 
         return Response(
             serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+class LogoutView(GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            status.HTTP_200_OK: (
+                MessageResponseSerializer
+            ),
+        }
+    )
+    def post(self, request):
+        serializer = self.get_serializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            refresh = RefreshToken(
+                serializer.validated_data["refresh"]
+            )
+
+            token_user_id = refresh.get(
+                "user_id"
+            )
+
+            if str(token_user_id) != str(
+                request.user.pk
+            ):
+                raise ValidationError(
+                    {
+                        "refresh": (
+                            "Refresh token does not belong "
+                            "to the current user."
+                        )
+                    }
+                )
+
+            refresh.blacklist()
+
+        except TokenError as exc:
+            raise ValidationError(
+                {
+                    "refresh": (
+                        "Invalid or expired refresh token."
+                    )
+                }
+            ) from exc
+
+        return Response(
+            {
+                "message": (
+                    "Logged out successfully."
+                )
+            },
             status=status.HTTP_200_OK,
         )

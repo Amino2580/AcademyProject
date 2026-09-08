@@ -1,3 +1,4 @@
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -511,4 +512,124 @@ class OTPAuthenticationAPITests(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_401_UNAUTHORIZED,
+        )
+
+class LogoutAPITests(APITestCase):
+    def setUp(self):
+        user_model = get_user_model()
+
+        self.user = user_model.objects.create_user(
+            username="logout-user",
+            password="test-password-123",
+        )
+
+        refresh = RefreshToken.for_user(self.user)
+
+        self.refresh_token = str(refresh)
+        self.access_token = str(refresh.access_token)
+
+        self.logout_url = reverse(
+            "accounts:logout"
+        )
+        self.refresh_url = reverse(
+            "accounts:token-refresh"
+        )
+
+    def authenticate(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=(
+                f"Bearer {self.access_token}"
+            )
+        )
+
+    def test_authenticated_user_can_logout(self):
+        self.authenticate()
+
+        response = self.client.post(
+            self.logout_url,
+            {
+                "refresh": self.refresh_token,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["message"],
+            "Logged out successfully.",
+        )
+
+    def test_refresh_token_is_blacklisted_after_logout(self):
+        self.authenticate()
+
+        logout_response = self.client.post(
+            self.logout_url,
+            {
+                "refresh": self.refresh_token,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            logout_response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.client.credentials()
+
+        refresh_response = self.client.post(
+            self.refresh_url,
+            {
+                "refresh": self.refresh_token,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            refresh_response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_anonymous_user_cannot_logout(self):
+        response = self.client.post(
+            self.logout_url,
+            {
+                "refresh": self.refresh_token,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_user_cannot_blacklist_another_users_token(self):
+        user_model = get_user_model()
+
+        another_user = user_model.objects.create_user(
+            username="another-user",
+            password="test-password-123",
+        )
+
+        another_refresh = RefreshToken.for_user(
+            another_user
+        )
+
+        self.authenticate()
+
+        response = self.client.post(
+            self.logout_url,
+            {
+                "refresh": str(another_refresh),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
         )

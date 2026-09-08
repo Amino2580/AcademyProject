@@ -72,3 +72,14 @@ class OTPVerifyResponseSerializer(serializers.Serializer):
     user = AuthUserSerializer(
         read_only=True,
     )
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(
+        write_only=True,
+    )
+
+
+class MessageResponseSerializer(serializers.Serializer):
+    message = serializers.CharField(
+        read_only=True,
+    )
