@@ -17,6 +17,11 @@ urlpatterns = [
 
     # Public APIs
     path(
+        "api/auth/",
+        include("accounts.urls"),
+    ),
+
+    path(
         "api/registrations/",
         include("registrations.urls"),
     ),

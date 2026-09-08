@@ -1,3 +1,6 @@
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -265,4 +268,247 @@ class OTPServiceTests(TestCase):
         self.assertEqual(
             request_data["token"],
             "123456",
+        )
+
+
+@override_settings(
+    OTP_DELIVERY_BACKEND="console",
+    OTP_EXPIRY_SECONDS=120,
+    OTP_RESEND_COOLDOWN_SECONDS=60,
+    OTP_MAX_ATTEMPTS=5,
+)
+class OTPAuthenticationAPITests(APITestCase):
+    def setUp(self):
+        self.phone = "09123456789"
+        self.code = "123456"
+
+        self.request_url = reverse(
+            "accounts:otp-request"
+        )
+        self.verify_url = reverse(
+            "accounts:otp-verify"
+        )
+        self.refresh_url = reverse(
+            "accounts:token-refresh"
+        )
+        self.me_url = reverse(
+            "accounts:current-user"
+        )
+
+    def create_valid_otp(
+        self,
+        phone=None,
+        code=None,
+    ):
+        return OneTimePassword.objects.create(
+            phone=phone or self.phone,
+            code_hash=make_password(
+                code or self.code
+            ),
+            expires_at=timezone.now()
+            + timedelta(minutes=2),
+        )
+
+    @patch("accounts.services.send_otp_code")
+    @patch(
+        "accounts.services.generate_otp_code",
+        return_value="123456",
+    )
+    def test_request_otp_api(
+        self,
+        mock_generate,
+        mock_send,
+    ):
+        response = self.client.post(
+            self.request_url,
+            {"phone": "+989123456789"},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        otp = OneTimePassword.objects.get()
+
+        self.assertEqual(
+            otp.phone,
+            self.phone,
+        )
+        self.assertTrue(
+            check_password(
+                self.code,
+                otp.code_hash,
+            )
+        )
+
+        self.assertEqual(
+            response.data["expiresIn"],
+            120,
+        )
+
+        mock_generate.assert_called_once_with()
+
+        mock_send.assert_called_once_with(
+            self.phone,
+            self.code,
+        )
+
+    def test_verify_otp_returns_jwt_and_user(self):
+        self.create_valid_otp()
+
+        response = self.client.post(
+            self.verify_url,
+            {
+                "phone": self.phone,
+                "code": self.code,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+
+        self.assertEqual(
+            response.data["user"]["phone"],
+            self.phone,
+        )
+        self.assertEqual(
+            response.data["user"]["role"],
+            "user",
+        )
+
+        profile = UserProfile.objects.get(
+            phone=self.phone
+        )
+
+        self.assertFalse(
+            profile.user.has_usable_password()
+        )
+        self.assertIsNotNone(
+            profile.phone_verified_at
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=(
+                f"Bearer {response.data['access']}"
+            )
+        )
+
+        me_response = self.client.get(
+            self.me_url
+        )
+
+        self.assertEqual(
+            me_response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            me_response.data["phone"],
+            self.phone,
+        )
+        self.assertEqual(
+            me_response.data["role"],
+            "user",
+        )
+
+    def test_existing_staff_user_gets_admin_role(self):
+        admin_user = (
+            get_user_model().objects.create_user(
+                username="admin-user",
+                is_staff=True,
+            )
+        )
+
+        UserProfile.objects.create(
+            user=admin_user,
+            phone=self.phone,
+        )
+
+        self.create_valid_otp()
+
+        response = self.client.post(
+            self.verify_url,
+            {
+                "phone": self.phone,
+                "code": self.code,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["user"]["role"],
+            "admin",
+        )
+
+    def test_refresh_token_returns_new_access(self):
+        self.create_valid_otp()
+
+        login_response = self.client.post(
+            self.verify_url,
+            {
+                "phone": self.phone,
+                "code": self.code,
+            },
+            format="json",
+        )
+
+        refresh_response = self.client.post(
+            self.refresh_url,
+            {
+                "refresh": (
+                    login_response.data["refresh"]
+                )
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            refresh_response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertIn(
+            "access",
+            refresh_response.data,
+        )
+        self.assertIn(
+            "refresh",
+            refresh_response.data,
+        )
+
+    def test_invalid_otp_is_rejected(self):
+        self.create_valid_otp()
+
+        response = self.client.post(
+            self.verify_url,
+            {
+                "phone": self.phone,
+                "code": "654321",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_anonymous_user_cannot_access_me(self):
+        response = self.client.get(
+            self.me_url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
         )
