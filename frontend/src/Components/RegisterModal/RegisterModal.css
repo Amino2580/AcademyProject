@@ -219,3 +219,22 @@
     font-size: 22px;
   }
 }
+
+.register-modal-status {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.register-modal-status.success {
+  color: #2e7d32;
+}
+
+.register-modal-status.error {
+  color: #c62828;
+}
+
+.submit-register:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
