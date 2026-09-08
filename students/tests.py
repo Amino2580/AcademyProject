@@ -43,7 +43,7 @@ class StudentAdminAPITests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_401_UNAUTHORIZED,
         )
 
     def test_regular_user_cannot_access_students(self):

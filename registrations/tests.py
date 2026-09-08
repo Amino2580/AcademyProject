@@ -115,7 +115,7 @@ class RegistrationRequestAdminAPITests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_401_UNAUTHORIZED,
         )
 
     def test_regular_user_cannot_access_admin_list(self):
@@ -129,7 +129,7 @@ class RegistrationRequestAdminAPITests(APITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
-
+        
     def test_admin_can_access_paginated_list(self):
         self.client.force_authenticate(
             user=self.admin_user
