@@ -1,9 +1,94 @@
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
+
 import AdminLayout from "../../../Components/Admin/AdminLayout/AdminLayout";
+import {
+  getDashboardSummary,
+} from "../../../services/dashboard";
+
 import "./Dashboard.css";
+
+
+const STATUS_LABELS = {
+  new: "جدید",
+  contacted: "تماس گرفته شد",
+  approved: "تأیید شده",
+  rejected: "رد شده",
+};
+
 
 function Dashboard() {
   const navigate = useNavigate();
+
+  const [dashboardData, setDashboardData] =
+    useState({
+      totalStudents: 0,
+      activeClasses: 0,
+      newRegistrations: 0,
+      todayClasses: 0,
+      recentRegistrations: [],
+    });
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+
+  const loadDashboard = useCallback(
+    async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const data =
+          await getDashboardSummary();
+
+        setDashboardData(data);
+      } catch (loadError) {
+        if (loadError.status === 401) {
+          navigate(
+            "/admin/login",
+            {
+              replace: true,
+            }
+          );
+
+          return;
+        }
+
+        setError(
+          loadError.message ||
+          "دریافت اطلاعات داشبورد انجام نشد."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [navigate]
+  );
+
+
+  useEffect(() => {
+    const timeoutId =
+      window.setTimeout(() => {
+        loadDashboard();
+      }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [loadDashboard]);
+
+
+  const recentRegistrations =
+    dashboardData.recentRegistrations || [];
+
 
   return (
     <AdminLayout>
@@ -13,12 +98,22 @@ function Dashboard() {
         <div className="admin-page-header">
           <div>
             <span>پنل مدیریت</span>
+
             <h1>داشبورد</h1>
+
             <p>
               مدیریت هنرجوها و برنامه کلاس‌های موسیقی
             </p>
           </div>
         </div>
+
+
+        {error && (
+          <div className="dashboard-section">
+            <p>{error}</p>
+          </div>
+        )}
+
 
         <div className="dashboard-cards">
 
@@ -29,9 +124,15 @@ function Dashboard() {
 
             <div>
               <span>تعداد هنرجوها</span>
-              <strong>24</strong>
+
+              <strong>
+                {loading
+                  ? "..."
+                  : dashboardData.totalStudents}
+              </strong>
             </div>
           </div>
+
 
           <div className="dashboard-card">
             <div className="dashboard-card-icon">
@@ -40,9 +141,15 @@ function Dashboard() {
 
             <div>
               <span>کلاس‌های فعال</span>
-              <strong>8</strong>
+
+              <strong>
+                {loading
+                  ? "..."
+                  : dashboardData.activeClasses}
+              </strong>
             </div>
           </div>
+
 
           <div className="dashboard-card">
             <div className="dashboard-card-icon">
@@ -51,9 +158,15 @@ function Dashboard() {
 
             <div>
               <span>ثبت‌نام جدید</span>
-              <strong>5</strong>
+
+              <strong>
+                {loading
+                  ? "..."
+                  : dashboardData.newRegistrations}
+              </strong>
             </div>
           </div>
+
 
           <div className="dashboard-card">
             <div className="dashboard-card-icon">
@@ -62,11 +175,17 @@ function Dashboard() {
 
             <div>
               <span>کلاس امروز</span>
-              <strong>4</strong>
+
+              <strong>
+                {loading
+                  ? "..."
+                  : dashboardData.todayClasses}
+              </strong>
             </div>
           </div>
 
         </div>
+
 
         <div className="dashboard-section">
 
@@ -77,14 +196,30 @@ function Dashboard() {
           <div className="quick-actions">
 
             <button
-              onClick={() => navigate("/admin/students")}
+              type="button"
+              onClick={() =>
+                navigate("/admin/students")
+              }
             >
               <span>♟</span>
               مدیریت هنرجوها
             </button>
 
             <button
-              onClick={() => navigate("/admin/schedule")}
+              type="button"
+              onClick={() =>
+                navigate("/admin/registrations")
+              }
+            >
+              <span>▣</span>
+              درخواست‌های ثبت‌نام
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/admin/schedule")
+              }
             >
               <span>♫</span>
               برنامه کلاس‌ها
@@ -94,17 +229,22 @@ function Dashboard() {
 
         </div>
 
+
         <div className="dashboard-section">
 
           <div className="section-title">
             <h2>ثبت‌نام‌های اخیر</h2>
 
             <button
-              onClick={() => navigate("/admin/students")}
+              type="button"
+              onClick={() =>
+                navigate("/admin/registrations")
+              }
             >
               مشاهده همه
             </button>
           </div>
+
 
           <div className="recent-table">
 
@@ -115,26 +255,49 @@ function Dashboard() {
               <span>وضعیت</span>
             </div>
 
-            <div className="table-row">
-              <span>آرین محمدی</span>
-              <span>مبتدی</span>
-              <span>حضوری</span>
-              <span className="status success">جدید</span>
-            </div>
 
-            <div className="table-row">
-              <span>سارا احمدی</span>
-              <span>متوسط</span>
-              <span>آنلاین</span>
-              <span className="status success">جدید</span>
-            </div>
+            {loading ? (
+              <div className="table-row">
+                <span>در حال دریافت اطلاعات...</span>
+              </div>
+            ) : recentRegistrations.length === 0 ? (
+              <div className="table-row">
+                <span>درخواست جدیدی وجود ندارد.</span>
+              </div>
+            ) : (
+              recentRegistrations.map(
+                (registration) => (
+                  <div
+                    className="table-row"
+                    key={registration.id}
+                  >
+                    <span>
+                      {registration.fullName}
+                    </span>
 
-            <div className="table-row">
-              <span>کیان رضایی</span>
-              <span>پیشرفته</span>
-              <span>حضوری</span>
-              <span className="status">بررسی شده</span>
-            </div>
+                    <span>
+                      {registration.level || "—"}
+                    </span>
+
+                    <span>
+                      {registration.classType || "—"}
+                    </span>
+
+                    <span
+                      className={`status ${
+                        registration.status === "approved"
+                          ? "success"
+                          : ""
+                      }`}
+                    >
+                      {STATUS_LABELS[
+                        registration.status
+                      ] || registration.status}
+                    </span>
+                  </div>
+                )
+              )
+            )}
 
           </div>
 
@@ -145,5 +308,6 @@ function Dashboard() {
     </AdminLayout>
   );
 }
+
 
 export default Dashboard;
