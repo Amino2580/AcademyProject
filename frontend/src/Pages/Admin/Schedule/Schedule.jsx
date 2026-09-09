@@ -1,4 +1,14 @@
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+import {
+  createScheduleBooking,
+  deleteScheduleBooking,
+  getScheduleBookings,
+  updateScheduleBooking,
+} from "../../../services/schedule";
 import { useNavigate } from "react-router-dom";
 import "./Schedule.css";
 
@@ -11,6 +21,15 @@ const DAYS = [
   "پنجشنبه",
 ];
 
+const DAY_VALUES = {
+  "شنبه": "saturday",
+  "یکشنبه": "sunday",
+  "دوشنبه": "monday",
+  "سه‌شنبه": "tuesday",
+  "چهارشنبه": "wednesday",
+  "پنجشنبه": "thursday",
+};
+
 const TIMES = [];
 
 for (let h = 7; h <= 19; h++) {
@@ -21,18 +40,13 @@ for (let h = 7; h <= 19; h++) {
   }
 }
 
-const STORAGE_KEY = "milad_tarighat_schedule_v2";
+const makeId = (day, time) =>
+  `${day}|${time}`;
 
 function Schedule() {
   const navigate = useNavigate();
 
-  const [bookings, setBookings] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    } catch {
-      return {};
-    }
-  });
+  const [bookings, setBookings] = useState({});
 
   const [dayFilter, setDayFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -47,19 +61,75 @@ function Schedule() {
     instrument: "",
     notes: "",
   });
+  const [loading, setLoading] =
+    useState(true);
 
-  /* ================= SAVE ================= */
+  const [error, setError] =
+    useState("");
 
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(bookings)
-    );
-  }, [bookings]);
+  const [saving, setSaving] =
+    useState(false);
+  /* ================= LOAD API ================= */
 
-  /* ================= ID ================= */
+  const loadBookings = useCallback(
+    async () => {
+      setLoading(true);
+      setError("");
 
-  const makeId = (day, time) => `${day}|${time}`;
+    try {
+      const data =
+        await getScheduleBookings();
+
+      const bookingMap = {};
+
+      const bookingList =
+        Array.isArray(data)
+          ? data
+          : [];
+
+      bookingList.forEach((booking) => {
+        const slotId = makeId(
+          booking.dayLabel,
+          booking.startTime
+        );
+
+        bookingMap[slotId] = booking;
+      });
+
+      setBookings(bookingMap);
+    } catch (loadError) {
+      if (loadError.status === 401) {
+        navigate(
+          "/admin/login",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      setError(
+        loadError.message ||
+        "دریافت برنامه کلاس‌ها انجام نشد."
+      );
+    } finally {
+      setLoading(false);
+    }
+  },
+  [navigate]
+);
+
+
+useEffect(() => {
+  const timeoutId = window.setTimeout(() => {
+    loadBookings();
+  }, 0);
+
+  return () => {
+    window.clearTimeout(timeoutId);
+  };
+}, [loadBookings]);
 
   /* ================= BOOKING ================= */
 
@@ -85,25 +155,46 @@ function Schedule() {
 
   /* ================= SUBMIT ================= */
 
-  const submitBooking = (e) => {
-    e.preventDefault();
+  const submitBooking = async (e) => {
+  e.preventDefault();
 
-    if (!selectedId) return;
+  if (!selectedId) return;
 
-    setBookings((prev) => ({
-      ...prev,
-      [selectedId]: {
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        instrument: form.instrument.trim(),
-        notes: form.notes.trim(),
-        updatedAt: new Date().toISOString(),
-      },
-    }));
+  setSaving(true);
+  setError("");
 
-    setModal(null);
+  const bookingData = {
+    name: form.name.trim(),
+    phone: form.phone.trim(),
+    instrument: form.instrument.trim(),
+    notes: form.notes.trim(),
   };
 
+  try {
+    if (selectedBooking) {
+      await updateScheduleBooking(
+        selectedBooking.id,
+        bookingData
+      );
+    } else {
+      await createScheduleBooking({
+        day: DAY_VALUES[selectedDay],
+        startTime: selectedTime,
+        ...bookingData,
+      });
+    }
+
+    await loadBookings();
+    setModal(null);
+  } catch (submitError) {
+    setError(
+      submitError.message ||
+      "ذخیره برنامه کلاس انجام نشد."
+    );
+  } finally {
+    setSaving(false);
+  }
+};
   /* ================= EDIT ================= */
 
   const editBooking = () => {
@@ -123,23 +214,34 @@ function Schedule() {
 
   /* ================= CANCEL ================= */
 
-  const cancelBooking = () => {
-    if (!selectedId) return;
+ const cancelBooking = async () => {
+  if (!selectedBooking) return;
 
-    const confirmed = window.confirm(
-      "آیا مطمئن هستید که می‌خواهید این رزرو را لغو کنید؟"
+  const confirmed = window.confirm(
+    "آیا مطمئن هستید که می‌خواهید این رزرو را لغو کنید؟"
+  );
+
+  if (!confirmed) return;
+
+  setSaving(true);
+  setError("");
+
+  try {
+    await deleteScheduleBooking(
+      selectedBooking.id
     );
 
-    if (!confirmed) return;
-
-    setBookings((prev) => {
-      const updated = { ...prev };
-      delete updated[selectedId];
-      return updated;
-    });
-
+    await loadBookings();
     setModal(null);
-  };
+  } catch (deleteError) {
+    setError(
+      deleteError.message ||
+      "لغو رزرو انجام نشد."
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
   /* ================= FILTER ================= */
 
@@ -261,6 +363,18 @@ function Schedule() {
         </button>
 
       </header>
+
+      {loading && (
+        <div className="schedule-api-message">
+         در حال دریافت برنامه کلاس‌ها...
+        </div>
+      )}
+
+      {error && (
+        <div className="schedule-api-message error">
+          {error}
+        </div>
+      )}
 
       {/* ================= TOOLBAR ================= */}
 
@@ -697,10 +811,13 @@ function Schedule() {
                 <button
                   type="submit"
                   className="primary-btn"
+                  disabled={saving}
                 >
-                  {selectedBooking
-                    ? "ذخیره تغییرات"
-                    : "ثبت رزرو"}
+                  {saving
+                    ? "در حال ذخیره..."
+                    : selectedBooking
+                      ? "ذخیره تغییرات"
+                      : "ثبت رزرو"}
                 </button>
 
               </div>
@@ -804,8 +921,11 @@ function Schedule() {
                 <button
                   className="danger-btn"
                   onClick={cancelBooking}
+                  disabled={saving}
                 >
-                  لغو رزرو
+                  {saving
+                    ? "در حال لغو..."
+                    : "لغو رزرو"}
                 </button>
 
                 <button
