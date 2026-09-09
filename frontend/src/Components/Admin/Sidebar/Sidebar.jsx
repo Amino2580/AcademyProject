@@ -1,22 +1,36 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import "./Sidebar.css";
+import {
+  NavLink,
+  useNavigate,
+} from "react-router-dom";
+
 import {
   logout,
 } from "../../../services/auth";
 
+import "./Sidebar.css";
+
+
 function Sidebar() {
   const navigate = useNavigate();
+
 
   const handleLogout = async () => {
     await logout();
 
     navigate(
       "/admin/login",
-    {
-      replace: true,
-    }
-  );
-};
+      {
+        replace: true,
+      }
+    );
+  };
+
+
+  const getMenuClass = ({ isActive }) =>
+    isActive
+      ? "admin-menu-item active"
+      : "admin-menu-item";
+
 
   return (
     <aside className="admin-sidebar">
@@ -29,34 +43,40 @@ function Sidebar() {
         <span>پنل مدیریت</span>
       </div>
 
+
       <nav className="admin-menu">
 
         <NavLink
           to="/admin"
           end
-          className={({ isActive }) =>
-            isActive ? "admin-menu-item active" : "admin-menu-item"
-          }
+          className={getMenuClass}
         >
           <span>⌂</span>
           داشبورد
         </NavLink>
 
+
         <NavLink
           to="/admin/students"
-          className={({ isActive }) =>
-            isActive ? "admin-menu-item active" : "admin-menu-item"
-          }
+          className={getMenuClass}
         >
           <span>♟</span>
           هنرجوها
         </NavLink>
 
+
+        <NavLink
+          to="/admin/registrations"
+          className={getMenuClass}
+        >
+          <span>▣</span>
+          درخواست‌های ثبت‌نام
+        </NavLink>
+
+
         <NavLink
           to="/admin/schedule"
-          className={({ isActive }) =>
-            isActive ? "admin-menu-item active" : "admin-menu-item"
-          }
+          className={getMenuClass}
         >
           <span>♫</span>
           برنامه کلاس‌ها
@@ -64,7 +84,9 @@ function Sidebar() {
 
       </nav>
 
+
       <button
+        type="button"
         className="admin-logout"
         onClick={handleLogout}
       >
@@ -75,5 +97,6 @@ function Sidebar() {
     </aside>
   );
 }
+
 
 export default Sidebar;

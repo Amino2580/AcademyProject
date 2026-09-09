@@ -18,6 +18,7 @@ import Footer from "./Components/Footer/Footer";
 import SideMenu from "./Components/SideMenu/SideMenu";
 import RegisterModal from "./Components/RegisterModal/RegisterModal";
 import ProtectedRoute from "./Components/Admin/ProtectedRoute/ProtectedRoute.jsx";
+import Registrations from "./Pages/Admin/Registrations/Registrations";
 import "./App.css";
 
 function App() {
@@ -171,6 +172,11 @@ function App() {
           <Route
             path="/admin/students"
             element={<Students />}
+          />
+
+          <Route
+            path="/admin/registrations"
+            element={<Registrations />}
           />
 
           <Route
