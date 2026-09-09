@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'students',
     'accounts',
     'schedules',
+    'dashboard',
 
 
     # Legacy apps - temporarily disabled

@@ -53,6 +53,10 @@ urlpatterns = [
         "api/admin/schedule/",
         include("schedules.urls"),
     ),
+    path(
+        "api/admin/dashboard/",
+        include("dashboard.urls"),
+    ),
 ]
 
 
