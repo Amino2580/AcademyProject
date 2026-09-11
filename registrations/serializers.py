@@ -1,6 +1,10 @@
 import re
 
+from django.db import transaction
 from rest_framework import serializers
+
+from students.models import Student
+
 
 from .models import RegistrationRequest
 
@@ -123,3 +127,47 @@ class RegistrationRequestStatusUpdateSerializer(
     class Meta:
         model = RegistrationRequest
         fields = ("status",)
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        registration = super().update(
+            instance,
+            validated_data,
+        )
+
+        if (
+            registration.status
+            != RegistrationRequest.Status.APPROVED
+        ):
+            return registration
+
+        student_level = (
+            registration.level
+            if registration.level
+            in Student.Level.values
+            else ""
+        )
+
+        student, created = (
+            Student.objects.get_or_create(
+                phone=registration.phone,
+                defaults={
+                    "full_name": registration.full_name,
+                    "age": registration.age,
+                    "level": student_level,
+                    "notes": registration.message,
+                    "is_active": True,
+                },
+            )
+        )
+
+        if not created and not student.is_active:
+            student.is_active = True
+            student.save(
+                update_fields=[
+                    "is_active",
+                    "updated_at",
+                ]
+            )
+
+        return registration

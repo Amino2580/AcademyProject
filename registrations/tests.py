@@ -3,6 +3,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from students.models import Student
+
 from .models import RegistrationRequest
 
 
@@ -124,7 +126,6 @@ class RegistrationRequestAdminAPITests(APITestCase):
         )
 
         response = self.client.get(self.list_url)
-
         self.assertEqual(
             response.status_code,
             status.HTTP_403_FORBIDDEN,
@@ -145,6 +146,95 @@ class RegistrationRequestAdminAPITests(APITestCase):
         self.assertEqual(
             len(response.data["results"]),
             1,
+        )
+
+    def test_approving_registration_creates_student(self):
+        self.client.force_authenticate(
+            user=self.admin_user
+        )
+
+        response = self.client.patch(
+            self.detail_url,
+            {
+                "status": (
+                    RegistrationRequest.Status.APPROVED
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            Student.objects.count(),
+            1,
+        )
+
+        student = Student.objects.get(
+            phone=self.registration.phone
+        )
+
+        self.assertEqual(
+            student.full_name,
+            self.registration.full_name,
+        )
+
+        self.assertEqual(
+            student.age,
+            self.registration.age,
+        )
+
+        self.assertEqual(
+            student.level,
+            self.registration.level,
+        )
+
+        self.assertTrue(
+            student.is_active
+        )
+
+    def test_approving_registration_reuses_inactive_student(
+        self
+    ):
+        existing_student = Student.objects.create(
+            full_name="Existing Student",
+            phone=self.registration.phone,
+            age=None,
+            level="",
+            is_active=False,
+        )
+
+        self.client.force_authenticate(
+            user=self.admin_user
+        )
+
+        response = self.client.patch(
+            self.detail_url,
+            {
+                "status": (
+                    RegistrationRequest.Status.APPROVED
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            Student.objects.count(),
+            1,
+        )
+
+        existing_student.refresh_from_db()
+
+        self.assertTrue(
+            existing_student.is_active
         )
 
     def test_admin_can_update_registration_status(self):
@@ -168,4 +258,9 @@ class RegistrationRequestAdminAPITests(APITestCase):
         self.assertEqual(
             self.registration.status,
             RegistrationRequest.Status.CONTACTED,
+        )
+
+        self.assertEqual(
+            Student.objects.count(),
+            0,
         )
