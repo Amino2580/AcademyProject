@@ -1,4 +1,5 @@
 from django.db import models
+from students.models import Student
 
 
 class ClassBooking(models.Model):
@@ -18,6 +19,14 @@ class ClassBooking(models.Model):
 
     start_time = models.TimeField(
         db_index=True,
+    )
+
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.SET_NULL,
+        related_name="class_bookings",
+        null=True,
+        blank=True,
     )
 
     student_name = models.CharField(

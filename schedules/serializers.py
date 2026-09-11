@@ -1,9 +1,11 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from accounts.services import (
     InvalidPhoneNumber,
     normalize_phone,
 )
+from students.models import Student
 
 from .models import ClassBooking
 
@@ -11,6 +13,11 @@ from .models import ClassBooking
 class ClassBookingSerializer(
     serializers.ModelSerializer
 ):
+    studentId = serializers.IntegerField(
+        source="student_id",
+        read_only=True,
+    )
+
     dayLabel = serializers.CharField(
         source="get_day_display",
         read_only=True,
@@ -45,6 +52,7 @@ class ClassBookingSerializer(
 
         fields = (
             "id",
+            "studentId",
             "day",
             "dayLabel",
             "startTime",
@@ -58,6 +66,7 @@ class ClassBookingSerializer(
 
         read_only_fields = (
             "id",
+            "studentId",
             "dayLabel",
             "createdAt",
             "updatedAt",
@@ -150,3 +159,74 @@ class ClassBookingSerializer(
             )
 
         return attrs
+
+
+    @staticmethod
+    def get_or_create_student(
+        phone,
+        full_name,
+    ):
+        student, created = (
+            Student.objects.get_or_create(
+                phone=phone,
+                defaults={
+                    "full_name": full_name,
+                },
+            )
+        )
+
+        if not created and not student.is_active:
+            student.is_active = True
+            student.save(
+                update_fields=[
+                    "is_active",
+                    "updated_at",
+                ]
+            )
+
+        return student
+
+
+    @transaction.atomic
+    def create(self, validated_data):
+        student = self.get_or_create_student(
+            phone=validated_data["phone"],
+            full_name=validated_data[
+                "student_name"
+            ],
+        )
+
+        validated_data["student"] = student
+
+        return super().create(
+            validated_data
+        )
+
+
+    @transaction.atomic
+    def update(
+        self,
+        instance,
+        validated_data,
+    ):
+        phone = validated_data.get(
+            "phone",
+            instance.phone,
+        )
+
+        full_name = validated_data.get(
+            "student_name",
+            instance.student_name,
+        )
+
+        student = self.get_or_create_student(
+            phone=phone,
+            full_name=full_name,
+        )
+
+        validated_data["student"] = student
+
+        return super().update(
+            instance,
+            validated_data,
+        )

@@ -13,7 +13,7 @@ class Student(models.Model):
 
     phone = models.CharField(
         max_length=20,
-        db_index=True,
+        unique=True,
     )
 
     age = models.PositiveSmallIntegerField(
