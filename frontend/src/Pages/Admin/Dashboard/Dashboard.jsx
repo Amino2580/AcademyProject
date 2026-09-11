@@ -157,7 +157,7 @@ function Dashboard() {
             </div>
 
             <div>
-              <span>ثبت‌نام جدید</span>
+              <span>درخواست جدید</span>
 
               <strong>
                 {loading
@@ -233,7 +233,7 @@ function Dashboard() {
         <div className="dashboard-section">
 
           <div className="section-title">
-            <h2>ثبت‌نام‌های اخیر</h2>
+            <h2>درخواست‌های ثبت‌نام اخیر</h2>
 
             <button
               type="button"
@@ -249,7 +249,7 @@ function Dashboard() {
           <div className="recent-table">
 
             <div className="table-row table-head">
-              <span>نام هنرجو</span>
+              <span>نام متقاضی</span>
               <span>سطح</span>
               <span>نوع کلاس</span>
               <span>وضعیت</span>
