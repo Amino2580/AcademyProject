@@ -371,3 +371,95 @@ class ClassBookingStudentIntegrationTests(
             booking.student,
             existing_student,
         )
+
+class PublicScheduleAvailabilityAPITests(
+    APITestCase
+):
+    def setUp(self):
+        self.url = reverse(
+            "schedule:availability"
+        )
+
+        ClassBooking.objects.create(
+            day=ClassBooking.Weekday.SATURDAY,
+            start_time=time(9, 0),
+            student_name="Private Student",
+            phone="09123456789",
+            instrument="piano",
+            notes="Private notes",
+        )
+
+    def test_anonymous_user_can_view_availability(self):
+        response = self.client.get(
+            self.url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        booking = response.data[0]
+
+        self.assertEqual(
+            booking["day"],
+            "saturday",
+        )
+
+        self.assertEqual(
+            booking["startTime"],
+            "09:00",
+        )
+
+        self.assertTrue(
+            booking["isBooked"]
+        )
+
+    def test_public_api_hides_student_information(self):
+        response = self.client.get(
+            self.url
+        )
+
+        booking = response.data[0]
+
+        self.assertEqual(
+            set(booking.keys()),
+            {
+                "day",
+                "dayLabel",
+                "startTime",
+                "isBooked",
+            },
+        )
+
+        self.assertNotIn(
+            "name",
+            booking,
+        )
+
+        self.assertNotIn(
+            "phone",
+            booking,
+        )
+
+        self.assertNotIn(
+            "notes",
+            booking,
+        )
+
+    def test_public_api_does_not_allow_creating_booking(self):
+        response = self.client.post(
+            self.url,
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )

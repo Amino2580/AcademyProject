@@ -4,17 +4,21 @@ from rest_framework.filters import (
 )
 
 from rest_framework.generics import (
+    ListAPIView,
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
 )
 
 from rest_framework.permissions import (
+    AllowAny,
     IsAdminUser,
 )
 
 from .models import ClassBooking
-from .serializers import ClassBookingSerializer
-
+from .serializers import (
+    ClassBookingSerializer,
+    PublicScheduleAvailabilitySerializer,
+)
 
 class ClassBookingAdminListCreateView(
     ListCreateAPIView
@@ -78,3 +82,25 @@ class ClassBookingAdminDetailView(
         "head",
         "options",
     ]
+
+class PublicScheduleAvailabilityView(
+    ListAPIView
+):
+    queryset = (
+        ClassBooking.objects
+        .all()
+        .order_by(
+            "day",
+            "start_time",
+        )
+    )
+
+    serializer_class = (
+        PublicScheduleAvailabilitySerializer
+    )
+
+    permission_classes = [
+        AllowAny,
+    ]
+
+    pagination_class = None
