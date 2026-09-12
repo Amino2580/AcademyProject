@@ -280,7 +280,11 @@ function PublicSchedule({
                             }
                             disabled={isBooked}
                             onClick={() =>
-                              onRegister()
+                              onRegister({
+                                day: day.value,
+                                dayLabel: day.label,
+                                startTime: time,
+                              })
                             }
                             aria-label={
                               `${day.label} ساعت ${time} - ${

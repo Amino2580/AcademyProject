@@ -187,4 +187,25 @@
   .registrations-header h1 {
     font-size: 28px;
   }
+  .registration-preferred-slot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 115px;
+    padding: 7px 11px;
+    border: 1px solid rgb(53 189 242 / 28%);
+    border-radius: 9px;
+    color: #dce8f5;
+    background: rgb(53 189 242 / 8%);
+  }
+
+  .registration-preferred-slot strong {
+    color: #3bc5f4;
+    font-size: 14px;
+  }
+
+  .registration-preferred-slot small {
+    color: #aebbcf;
+    font-size: 13px;
+  }
 }

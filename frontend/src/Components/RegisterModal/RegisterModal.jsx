@@ -1,8 +1,11 @@
 import { useState } from "react";
+
+import {
+  publicApiRequest,
+} from "../../services/api";
+
 import "./RegisterModal.css";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 const INITIAL_FORM = {
   fullName: "",
@@ -11,16 +14,32 @@ const INITIAL_FORM = {
   message: "",
 };
 
-function RegisterModal({ isOpen, onClose }) {
-  const [formData, setFormData] = useState(INITIAL_FORM);
-  const [loading, setLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState({
+
+function RegisterModal({
+  isOpen,
+  onClose,
+  selectedSlot,
+}) {
+  const [formData, setFormData] =
+    useState(INITIAL_FORM);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [
+    statusMessage,
+    setStatusMessage,
+  ] = useState({
     type: "",
     text: "",
   });
 
+
   const handleChange = (event) => {
-    const { name, value } = event.target;
+    const {
+      name,
+      value,
+    } = event.target;
 
     setFormData((previousData) => ({
       ...previousData,
@@ -33,10 +52,12 @@ function RegisterModal({ isOpen, onClose }) {
     });
   };
 
+
   const handleClose = () => {
     if (loading) return;
 
     setFormData(INITIAL_FORM);
+
     setStatusMessage({
       type: "",
       text: "",
@@ -45,53 +66,46 @@ function RegisterModal({ isOpen, onClose }) {
     onClose();
   };
 
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     setLoading(true);
+
     setStatusMessage({
       type: "",
       text: "",
     });
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/registrations/`,
+      await publicApiRequest(
+        "/api/registrations/",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+          body: {
             fullName: formData.fullName,
             phone: formData.phone,
             age: null,
             level: formData.level,
             instrument: "پیانو",
             classType: "",
+            preferredDay:
+              selectedSlot?.day || "",
+            preferredTime:
+              selectedSlot?.startTime || null,
             message: formData.message,
-          }),
-        },
+          },
+        }
       );
-
-      const responseData = await response
-        .json()
-        .catch(() => null);
-
-      if (!response.ok) {
-        const apiError =
-          responseData?.metaData?.status?.message;
-
-        throw new Error(
-          apiError || "ارسال درخواست با خطا مواجه شد.",
-        );
-      }
 
       setFormData(INITIAL_FORM);
 
       setStatusMessage({
         type: "success",
-        text: "درخواست ثبت‌نام شما با موفقیت ارسال شد.",
+        text: (
+          "درخواست ثبت‌نام شما با "
+          + "موفقیت ارسال شد."
+        ),
       });
     } catch (error) {
       setStatusMessage({
@@ -99,14 +113,21 @@ function RegisterModal({ isOpen, onClose }) {
         text:
           error instanceof Error
             ? error.message
-            : "ارسال درخواست با خطا مواجه شد.",
+            : (
+                "ارسال درخواست با "
+                + "خطا مواجه شد."
+              ),
       });
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+
+  if (!isOpen) {
+    return null;
+  }
+
 
   return (
     <div
@@ -115,76 +136,127 @@ function RegisterModal({ isOpen, onClose }) {
     >
       <div
         className="register-modal"
-        onClick={(event) => event.stopPropagation()}
+        onClick={(event) =>
+          event.stopPropagation()
+        }
       >
         <button
           type="button"
           className="modal-close"
           onClick={handleClose}
           disabled={loading}
+          aria-label="بستن فرم"
         >
           ×
         </button>
 
-        <h2>ثبت‌نام در کلاس پیانو</h2>
+        <h2>
+          ثبت‌نام در کلاس پیانو
+        </h2>
 
         <p className="modal-description">
-          اطلاعات خود را وارد کنید تا با شما تماس بگیریم.
+          اطلاعات خود را وارد کنید تا
+          با شما تماس بگیریم.
         </p>
+
+
+        {selectedSlot && (
+          <div className="register-selected-slot">
+            <span>
+              زمان درخواستی
+            </span>
+
+            <strong>
+              {selectedSlot.dayLabel}
+              {"، ساعت "}
+              {selectedSlot.startTime}
+            </strong>
+
+            <small>
+              ثبت نهایی این زمان پس از
+              تأیید مدیریت انجام می‌شود.
+            </small>
+          </div>
+        )}
+
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>نام و نام خانوادگی</label>
+            <label htmlFor="register-full-name">
+              نام و نام خانوادگی
+            </label>
 
             <input
+              id="register-full-name"
               type="text"
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
               placeholder="نام خود را وارد کنید"
-              maxLength="150"
+              maxLength={150}
               required
             />
           </div>
 
           <div className="form-group">
-            <label>شماره تماس</label>
+            <label htmlFor="register-phone">
+              شماره تماس
+            </label>
 
             <input
+              id="register-phone"
               type="tel"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
               placeholder="09xxxxxxxxx"
-              maxLength="13"
+              maxLength={13}
+              dir="ltr"
               required
             />
           </div>
 
           <div className="form-group">
-            <label>سطح نوازندگی</label>
+            <label htmlFor="register-level">
+              سطح نوازندگی
+            </label>
 
             <select
+              id="register-level"
               name="level"
               value={formData.level}
               onChange={handleChange}
             >
-              <option value="">انتخاب کنید</option>
-              <option value="beginner">مبتدی</option>
-              <option value="intermediate">متوسط</option>
-              <option value="advanced">پیشرفته</option>
+              <option value="">
+                انتخاب کنید
+              </option>
+
+              <option value="beginner">
+                مبتدی
+              </option>
+
+              <option value="intermediate">
+                متوسط
+              </option>
+
+              <option value="advanced">
+                پیشرفته
+              </option>
             </select>
           </div>
 
           <div className="form-group">
-            <label>توضیحات</label>
+            <label htmlFor="register-message">
+              توضیحات
+            </label>
 
             <textarea
+              id="register-message"
               name="message"
               value={formData.message}
               onChange={handleChange}
-              rows="3"
-              maxLength="500"
+              rows={3}
+              maxLength={500}
               placeholder="اگر توضیحی دارید بنویسید..."
             />
           </div>
@@ -194,12 +266,18 @@ function RegisterModal({ isOpen, onClose }) {
             className="submit-register"
             disabled={loading}
           >
-            {loading ? "در حال ارسال..." : "ارسال درخواست"}
+            {loading
+              ? "در حال ارسال..."
+              : "ارسال درخواست"}
           </button>
 
           {statusMessage.text && (
             <p
-              className={`register-modal-status ${statusMessage.type}`}
+              className={
+                `register-modal-status ${
+                  statusMessage.type
+                }`
+              }
             >
               {statusMessage.text}
             </p>
@@ -209,5 +287,6 @@ function RegisterModal({ isOpen, onClose }) {
     </div>
   );
 }
+
 
 export default RegisterModal;

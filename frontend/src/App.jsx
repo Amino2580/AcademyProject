@@ -23,7 +23,33 @@ import Registrations from "./Pages/Admin/Registrations/Registrations";
 import "./App.css";
 
 function App() {
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [
+    isRegisterOpen,
+    setIsRegisterOpen,
+  ] = useState(false);
+
+  const [
+    selectedScheduleSlot,
+    setSelectedScheduleSlot,
+  ] = useState(null);
+
+
+  const openRegisterModal = (
+    selectedSlot = null
+  ) => {
+    setSelectedScheduleSlot(
+      selectedSlot
+    );
+
+    setIsRegisterOpen(true);
+  };
+
+
+  const closeRegisterModal = () => {
+    setIsRegisterOpen(false);
+    setSelectedScheduleSlot(null);
+  };
+
 
   return (
     <BrowserRouter>
@@ -35,24 +61,22 @@ function App() {
               <Navbar />
 
               <PublicSchedule
-                onRegister={() =>
-                  setIsRegisterOpen(true)
-                }
+                onRegister={openRegisterModal}
               />
 
-              <Footer  />
+              <Footer />
 
               <button
                 className="floating-register-btn"
                 onClick={() =>
-                  setIsRegisterOpen(true)
+                  openRegisterModal()
                 }
               >
-                 ثبت‌نام کلاس
+                ثبت‌نام کلاس
               </button>
-          </>
-        }
-      />
+            </>
+          }
+        />
         <Route
        path="/gallery"
        element={
@@ -64,7 +88,9 @@ function App() {
 
       <button
         className="floating-register-btn"
-        onClick={() => setIsRegisterOpen(true)}
+        onClick={() =>
+          openRegisterModal()
+        }
        >
         ثبت نام کلاس
        </button>
@@ -86,7 +112,9 @@ function App() {
               {/* دکمه ثبت نام */}
               <button
                 className="floating-register-btn"
-                onClick={() => setIsRegisterOpen(true)}
+                onClick={() =>
+                  openRegisterModal()
+                }
               >
                 ثبت نام کلاس
               </button>
@@ -107,7 +135,9 @@ function App() {
 
               <button
                 className="floating-register-btn"
-                onClick={() => setIsRegisterOpen(true)}
+                onClick={() =>
+                  openRegisterModal()
+                }
               >
                 ثبت نام کلاس
               </button>
@@ -128,7 +158,9 @@ function App() {
 
               <button
                 className="floating-register-btn"
-                onClick={() => setIsRegisterOpen(true)}
+                onClick={() =>
+                  openRegisterModal()
+                }
               >
                 ثبت نام کلاس
               </button>
@@ -149,7 +181,9 @@ function App() {
 
               <button
                 className="floating-register-btn"
-                onClick={() => setIsRegisterOpen(true)}
+                onClick={() =>
+                  openRegisterModal()
+                }
               >
                 ثبت نام کلاس
               </button>
@@ -170,7 +204,9 @@ function App() {
 
               <button
                 className="floating-register-btn"
-                onClick={() => setIsRegisterOpen(true)}
+                onClick={() =>
+                  openRegisterModal()
+                }
               >
                 ثبت نام کلاس
               </button>
@@ -212,7 +248,10 @@ function App() {
       {/* Modal ثبت نام */}
       <RegisterModal
         isOpen={isRegisterOpen}
-        onClose={() => setIsRegisterOpen(false)}
+        selectedSlot={
+          selectedScheduleSlot
+        }
+        onClose={closeRegisterModal}
       />
 
     </BrowserRouter>

@@ -190,6 +190,7 @@ function Registrations() {
                     <th>سطح</th>
                     <th>ساز</th>
                     <th>نوع کلاس</th>
+                    <th>زمان درخواستی</th>
                     <th>توضیحات</th>
                     <th>تاریخ</th>
                     <th>وضعیت</th>
@@ -222,6 +223,25 @@ function Registrations() {
 
                       <td>
                         {request.classType || "—"}
+                      </td>
+
+                      <td>
+                        {(
+                          request.preferredDayLabel
+                          && request.preferredTime
+                        ) ? (
+                          <span className="registration-preferred-slot">
+                            <strong>
+                              {request.preferredDayLabel}
+                            </strong>
+
+                            <small dir="ltr">
+                              {request.preferredTime}
+                            </small>
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </td>
 
                       <td className="registration-message">

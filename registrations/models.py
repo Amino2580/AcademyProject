@@ -8,17 +8,57 @@ class RegistrationRequest(models.Model):
         APPROVED = "approved", "Approved"
         REJECTED = "rejected", "Rejected"
 
-    full_name = models.CharField(max_length=150)
-    phone = models.CharField(max_length=20, db_index=True)
-    age = models.PositiveSmallIntegerField(null=True, blank=True)
-    level = models.CharField(max_length=50, blank=True)
-    instrument = models.CharField(max_length=100, blank=True)
+    class PreferredDay(models.TextChoices):
+        SATURDAY = "saturday", "شنبه"
+        SUNDAY = "sunday", "یکشنبه"
+        MONDAY = "monday", "دوشنبه"
+        TUESDAY = "tuesday", "سه‌شنبه"
+        WEDNESDAY = "wednesday", "چهارشنبه"
+        THURSDAY = "thursday", "پنجشنبه"
 
-    # This is only the applicant's current preference.
-    # The final class model will be designed after requirements are confirmed.
-    class_type = models.CharField(max_length=100, blank=True)
+    full_name = models.CharField(
+        max_length=150,
+    )
 
-    message = models.TextField(blank=True)
+    phone = models.CharField(
+        max_length=20,
+        db_index=True,
+    )
+
+    age = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+    )
+
+    level = models.CharField(
+        max_length=50,
+        blank=True,
+    )
+
+    instrument = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    class_type = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    preferred_day = models.CharField(
+        max_length=10,
+        choices=PreferredDay.choices,
+        blank=True,
+    )
+
+    preferred_time = models.TimeField(
+        null=True,
+        blank=True,
+    )
+
+    message = models.TextField(
+        blank=True,
+    )
 
     status = models.CharField(
         max_length=20,
@@ -27,11 +67,21 @@ class RegistrationRequest(models.Model):
         db_index=True,
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = [
+            "-created_at",
+        ]
 
     def __str__(self):
-        return f"{self.full_name} - {self.phone}"
+        return (
+            f"{self.full_name} - "
+            f"{self.phone}"
+        )

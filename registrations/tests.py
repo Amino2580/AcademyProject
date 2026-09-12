@@ -3,6 +3,10 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from datetime import time
+
+from schedules.models import ClassBooking
+
 from students.models import Student
 
 from .models import RegistrationRequest
@@ -72,6 +76,103 @@ class RegistrationRequestCreateAPITests(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+        self.assertEqual(
+            RegistrationRequest.objects.count(),
+            0,
+        )
+    def test_create_registration_with_preferred_slot(
+        self
+    ):
+        response = self.client.post(
+            self.url,
+             {
+                "fullName": "Schedule User",
+                "phone": "09121111111",
+                "preferredDay": "saturday",
+                "preferredTime": "09:00",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        registration = (
+            RegistrationRequest.objects.get()
+        )
+
+        self.assertEqual(
+            registration.preferred_day,
+            "saturday",
+        )
+
+        self.assertEqual(
+            registration.preferred_time,
+            time(9, 0),
+        )
+
+        self.assertEqual(
+            response.data["preferredDay"],
+            "saturday",
+        )
+
+        self.assertEqual(
+            response.data["preferredTime"],
+            "09:00",
+        )
+
+    def test_reject_incomplete_preferred_slot(
+        self
+    ):
+        response = self.client.post(
+            self.url,
+            {
+                "fullName": "Incomplete User",
+                "phone": "09122222222",
+                "preferredDay": "sunday",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(
+            RegistrationRequest.objects.count(),
+            0,
+        )
+
+    def test_reject_preferred_slot_when_booked(
+        self
+    ):
+        ClassBooking.objects.create(
+            day=ClassBooking.Weekday.MONDAY,
+            start_time=time(10, 0),
+            student_name="Existing Student",
+            phone="09123333333",
+            instrument="piano",
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "fullName": "New Applicant",
+                "phone": "09124444444",
+                "preferredDay": "monday",
+                "preferredTime": "10:00",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
         self.assertEqual(
             RegistrationRequest.objects.count(),
             0,
