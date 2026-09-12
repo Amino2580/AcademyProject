@@ -11,7 +11,8 @@ import Register from "./Pages/Register/Register";
 import Login from "./Pages/Admin/Login/Login";
 import Dashboard from "./Pages/Admin/Dashboard/Dashboard";
 import Students from "./Pages/Admin/Students/Students";
-import Schedule from "./Pages/Admin/Schedule/Schedule";
+import AdminSchedule from "./Pages/Admin/Schedule/Schedule";
+import PublicSchedule from "./Pages/Schedule/PublicSchedule";
 
 import Navbar from "./Components/Navbar/Navbar";
 import Footer from "./Components/Footer/Footer";
@@ -28,9 +29,30 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route
-  path="/schedule"
-  element={<Schedule />}
-/>
+          path="/schedule"
+          element={
+            <>
+              <Navbar />
+
+              <PublicSchedule
+                onRegister={() =>
+                  setIsRegisterOpen(true)
+                }
+              />
+
+              <Footer  />
+
+              <button
+                className="floating-register-btn"
+                onClick={() =>
+                  setIsRegisterOpen(true)
+                }
+              >
+                 ثبت‌نام کلاس
+              </button>
+          </>
+        }
+      />
         <Route
        path="/gallery"
        element={
@@ -181,7 +203,7 @@ function App() {
 
           <Route
             path="/admin/schedule"
-            element={<Schedule />}
+            element={<AdminSchedule />}
           />
         </Route>
 

@@ -1,5 +1,6 @@
 import {
   apiRequest,
+  publicApiRequest,
 } from "./api";
 
 
@@ -45,5 +46,11 @@ export function deleteScheduleBooking(
     {
       method: "DELETE",
     }
+  );
+}
+
+export function getPublicScheduleAvailability() {
+  return publicApiRequest(
+    "/api/schedule/availability/"
   );
 }

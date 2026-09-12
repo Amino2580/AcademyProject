@@ -49,7 +49,11 @@ async function sendRequest(
       headers: {
         "Content-Type": "application/json",
         ...customHeaders,
-        Authorization: `Bearer ${accessToken}`,
+        ...(accessToken
+          ? {
+              Authorization: `Bearer ${accessToken}`,
+            }
+          : {}),
       },
       body:
         body === undefined
@@ -116,6 +120,31 @@ export async function apiRequest(
       accessToken
     );
   }
+
+  if (!result.response.ok) {
+    const error = new Error(
+      getErrorMessage(result.data)
+    );
+
+    error.status = result.response.status;
+    error.data = result.data;
+
+    throw error;
+  }
+
+  return result.data;
+}
+
+
+export async function publicApiRequest(
+  path,
+  options = {}
+) {
+  const result = await sendRequest(
+    path,
+    options,
+    null
+  );
 
   if (!result.response.ok) {
     const error = new Error(
