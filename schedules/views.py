@@ -1,4 +1,11 @@
-from django.db.models import Q
+from django.db.models import (
+    Case,
+    IntegerField,
+    Q,
+    Value,
+    When,
+)
+from django.utils import timezone
 
 from rest_framework.filters import (
     OrderingFilter,
@@ -25,12 +32,74 @@ from .serializers import (
     PublicScheduleAvailabilitySerializer,
 )
 
+
+WEEKDAY_NUMBERS = {
+    ClassBooking.Weekday.MONDAY: 0,
+    ClassBooking.Weekday.TUESDAY: 1,
+    ClassBooking.Weekday.WEDNESDAY: 2,
+    ClassBooking.Weekday.THURSDAY: 3,
+    ClassBooking.Weekday.SATURDAY: 5,
+    ClassBooking.Weekday.SUNDAY: 6,
+}
+
+
+def get_upcoming_class_order():
+    current_date_time = (
+        timezone.localtime()
+    )
+
+    current_weekday = (
+        current_date_time.weekday()
+    )
+
+    current_time = (
+        current_date_time.time()
+    )
+
+    ordering_conditions = []
+
+    for (
+        day_value,
+        weekday_number,
+    ) in WEEKDAY_NUMBERS.items():
+        days_until_class = (
+            weekday_number
+            - current_weekday
+        ) % 7
+
+        if days_until_class == 0:
+            ordering_conditions.append(
+                When(
+                    day=day_value,
+                    start_time__lt=current_time,
+                    then=Value(7),
+                )
+            )
+
+        ordering_conditions.append(
+            When(
+                day=day_value,
+                then=Value(
+                    days_until_class
+                ),
+            )
+        )
+
+    return Case(
+        *ordering_conditions,
+        default=Value(8),
+        output_field=IntegerField(),
+    )
+
+
 class ClassBookingAdminListCreateView(
     ListCreateAPIView
 ):
     queryset = ClassBooking.objects.all()
     serializer_class = ClassBookingSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [
+        IsAdminUser,
+    ]
 
     pagination_class = None
 
@@ -59,10 +128,14 @@ class ClassBookingAdminListCreateView(
     ]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = (
+            super().get_queryset()
+        )
 
-        day = self.request.query_params.get(
-            "day"
+        day = (
+            self.request
+            .query_params
+            .get("day")
         )
 
         if day:
@@ -78,7 +151,9 @@ class ClassBookingAdminDetailView(
 ):
     queryset = ClassBooking.objects.all()
     serializer_class = ClassBookingSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [
+        IsAdminUser,
+    ]
 
     http_method_names = [
         "get",
@@ -87,6 +162,7 @@ class ClassBookingAdminDetailView(
         "head",
         "options",
     ]
+
 
 class PublicScheduleAvailabilityView(
     ListAPIView
@@ -110,10 +186,14 @@ class PublicScheduleAvailabilityView(
 
     pagination_class = None
 
+
 class MyScheduleListView(
     ListAPIView
 ):
-    serializer_class = MyScheduleSerializer
+    serializer_class = (
+        MyScheduleSerializer
+    )
+
     permission_classes = [
         IsAuthenticated,
     ]
@@ -128,21 +208,30 @@ class MyScheduleListView(
         )
 
         if profile is None:
-            return ClassBooking.objects.none()
+            return (
+                ClassBooking.objects.none()
+            )
 
         return (
             ClassBooking.objects
             .select_related("student")
             .filter(
                 Q(
-                    student__phone=profile.phone
+                    student__phone=(
+                        profile.phone
+                    )
                 )
                 | Q(
                     phone=profile.phone
                 )
             )
+            .annotate(
+                upcoming_order=(
+                    get_upcoming_class_order()
+                )
+            )
             .order_by(
-                "day",
+                "upcoming_order",
                 "start_time",
             )
         )
