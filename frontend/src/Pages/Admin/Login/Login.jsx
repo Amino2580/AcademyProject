@@ -11,21 +11,36 @@ import {
 import "./Login.css";
 
 
-function Login() {
+function Login({
+  adminOnly = false,
+}) {
   const navigate = useNavigate();
 
-  const [step, setStep] = useState("phone");
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
+  const [step, setStep] =
+    useState("phone");
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [phone, setPhone] =
+    useState("");
 
-  const isOtpStep = step === "otp";
+  const [code, setCode] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [message, setMessage] =
+    useState("");
+
+  const isOtpStep =
+    step === "otp";
 
 
-  const handleRequestOtp = async (event) => {
+  const handleRequestOtp = async (
+    event
+  ) => {
     event.preventDefault();
 
     setLoading(true);
@@ -51,7 +66,9 @@ function Login() {
   };
 
 
-  const handleVerifyOtp = async (event) => {
+  const handleVerifyOtp = async (
+    event
+  ) => {
     event.preventDefault();
 
     setLoading(true);
@@ -64,7 +81,10 @@ function Login() {
         code
       );
 
-      if (authData.user?.role !== "admin") {
+      if (
+        adminOnly &&
+        authData.user?.role !== "admin"
+      ) {
         clearAuth();
 
         setError(
@@ -77,7 +97,9 @@ function Login() {
       saveAuth(authData);
 
       navigate(
-        "/admin",
+        authData.user?.role === "admin"
+          ? "/admin"
+          : "/my-schedule",
         {
           replace: true,
         }
@@ -102,26 +124,37 @@ function Login() {
 
 
   return (
-    <main className="admin-login-page">
+    <main
+      className="admin-login-page"
+      dir="rtl"
+    >
       <div className="login-box">
         <div className="login-header">
           <div className="login-logo">
             میلاد طریقت
           </div>
 
-          <span>پنل مدیریت</span>
+          <span>
+            {adminOnly
+              ? "پنل مدیریت"
+              : "حساب هنرجو"}
+          </span>
 
           <h1>
             {isOtpStep
               ? "تأیید شماره موبایل"
-              : "ورود به حساب مدیریت"
+              : adminOnly
+                ? "ورود به حساب مدیریت"
+                : "ورود به حساب هنرجو"
             }
           </h1>
 
           <p>
             {isOtpStep
               ? "کد پیامک‌شده را وارد کنید."
-              : "شماره موبایل مدیر را وارد کنید."
+              : adminOnly
+                ? "شماره موبایل مدیر را وارد کنید."
+                : "شماره موبایل خود را وارد کنید."
             }
           </p>
         </div>
@@ -135,7 +168,9 @@ function Login() {
         >
           {!isOtpStep ? (
             <div className="login-field">
-              <label>شماره موبایل</label>
+              <label>
+                شماره موبایل
+              </label>
 
               <input
                 type="tel"
@@ -143,7 +178,9 @@ function Login() {
                 autoComplete="tel"
                 value={phone}
                 onChange={(event) =>
-                  setPhone(event.target.value)
+                  setPhone(
+                    event.target.value
+                  )
                 }
                 placeholder="09123456789"
                 dir="ltr"
@@ -153,7 +190,9 @@ function Login() {
           ) : (
             <>
               <div className="login-field">
-                <label>شماره موبایل</label>
+                <label>
+                  شماره موبایل
+                </label>
 
                 <input
                   type="tel"
@@ -164,7 +203,9 @@ function Login() {
               </div>
 
               <div className="login-field">
-                <label>کد تأیید</label>
+                <label>
+                  کد تأیید
+                </label>
 
                 <input
                   type="text"
@@ -229,7 +270,9 @@ function Login() {
         <div className="login-back">
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() =>
+              navigate("/")
+            }
           >
             بازگشت به سایت
           </button>

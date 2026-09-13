@@ -1,67 +1,137 @@
-import { Link, useLocation } from "react-router-dom";
-import "./Navbar.css";
+import {
+  Link,
+  useLocation,
+} from "react-router-dom";
+
+import {
+  getAuthUser,
+  isAuthenticated,
+} from "../../services/auth";
 
 import mt from "../../assets/MT.jpg";
+
+import "./Navbar.css";
+
 
 function Navbar() {
   const location = useLocation();
 
-  const menuItems = [
-    { title: "خانه", path: "/" },
-    { title: "درباره استاد", path: "/about" },
-    { title: "ثبت نام در کلاس", path: "/register" },
-    { title: "تصاویر", path: "/gallery" },
-    { title: "ویدئوها", path: "/videos" },
-    { title: "برنامه کلاسی", path: "/schedule" },
-    { title: "تماس با ما", path: "/contact" },
+  const authUser = getAuthUser();
+  const authenticated = isAuthenticated();
+
+  const accountItem = {
+    title: authenticated
+      ? authUser?.role === "admin"
+        ? "پنل مدیریت"
+        : "کلاس‌های من"
+      : "ورود هنرجو",
+
+    path: authenticated
+      ? authUser?.role === "admin"
+        ? "/admin"
+        : "/my-schedule"
+      : "/login",
+  };
+
+
+  const rightMenuItems = [
+    {
+      title: "خانه",
+      path: "/",
+    },
+    {
+      title: "درباره استاد",
+      path: "/about",
+    },
+    {
+      title: "ثبت نام در کلاس",
+      path: "/register",
+    },
+    accountItem,
   ];
+
+
+  const leftMenuItems = [
+    {
+      title: "تصاویر",
+      path: "/gallery",
+    },
+    {
+      title: "ویدئوها",
+      path: "/videos",
+    },
+    {
+      title: "برنامه کلاسی",
+      path: "/schedule",
+    },
+    {
+      title: "تماس با ما",
+      path: "/contact",
+    },
+  ];
+
+
+  const getLinkClassName = (
+    path
+  ) => {
+    return location.pathname === path
+      ? "nav-link active"
+      : "nav-link";
+  };
+
 
   return (
     <header className="navbar-wrapper">
       <nav className="navbar">
-
-        {/* منوی سمت راست */}
         <div className="navbar-side navbar-right">
-          {menuItems.slice(0, 3).map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={
-                location.pathname === item.path
-                  ? "nav-link active"
-                  : "nav-link"
-              }
-            >
-              {item.title}
-            </Link>
-          ))}
+          {rightMenuItems.map(
+            (item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={
+                  getLinkClassName(
+                    item.path
+                  )
+                }
+              >
+                {item.title}
+              </Link>
+            )
+          )}
         </div>
 
-        {/* لوگو */}
-        <Link to="/" className="navbar-logo">
-          <img src={mt} alt="Milad Tarighat" />
+        <Link
+          to="/"
+          className="navbar-logo"
+        >
+          <img
+            src={mt}
+            alt="Milad Tarighat"
+          />
         </Link>
 
-        {/* منوی سمت چپ */}
         <div className="navbar-side navbar-left">
-          {menuItems.slice(3).map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={
-                location.pathname === item.path
-                  ? "nav-link active"
-                  : "nav-link"
-              }
-            >
-              {item.title}
-            </Link>
-          ))}
+          {leftMenuItems.map(
+            (item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={
+                  getLinkClassName(
+                    item.path
+                  )
+                }
+              >
+                {item.title}
+              </Link>
+            )
+          )}
         </div>
-
       </nav>
     </header>
   );
 }
+
 
 export default Navbar;

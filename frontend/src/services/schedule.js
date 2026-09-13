@@ -54,3 +54,9 @@ export function getPublicScheduleAvailability() {
     "/api/schedule/availability/"
   );
 }
+
+export function getMySchedule() {
+  return apiRequest(
+    "/api/schedule/mine/"
+  );
+}

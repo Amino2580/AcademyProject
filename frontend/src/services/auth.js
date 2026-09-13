@@ -112,6 +112,13 @@ export function isAdminAuthenticated() {
   );
 }
 
+export function isAuthenticated() {
+  return Boolean(
+    getAccessToken() &&
+    getAuthUser()
+  );
+}
+
 export function clearAuth() {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");

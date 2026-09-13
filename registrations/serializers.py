@@ -260,6 +260,7 @@ class RegistrationRequestStatusUpdateSerializer(
             "status",
         )
 
+
     @transaction.atomic
     def update(
         self,
@@ -293,7 +294,9 @@ class RegistrationRequestStatusUpdateSerializer(
                     ),
                     "age": registration.age,
                     "level": student_level,
-                    "notes": registration.message,
+                    "notes": (
+                        registration.message
+                    ),
                     "is_active": True,
                 },
             )
@@ -311,5 +314,60 @@ class RegistrationRequestStatusUpdateSerializer(
                     "updated_at",
                 ]
             )
+
+        if (
+            registration.preferred_day
+            and registration.preferred_time
+        ):
+            booking, booking_created = (
+                ClassBooking.objects.get_or_create(
+                    day=registration.preferred_day,
+                    start_time=(
+                        registration.preferred_time
+                    ),
+                    defaults={
+                        "student": student,
+                        "student_name": (
+                            registration.full_name
+                        ),
+                        "phone": (
+                            registration.phone
+                        ),
+                        "instrument": (
+                            registration.instrument
+                        ),
+                        "notes": (
+                            registration.message
+                        ),
+                    },
+                )
+            )
+
+            if (
+                not booking_created
+                and booking.phone
+                != registration.phone
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "status": (
+                            "This time slot is already "
+                            "assigned to another student."
+                        )
+                    }
+                )
+
+            if (
+                not booking_created
+                and booking.student_id is None
+            ):
+                booking.student = student
+
+                booking.save(
+                    update_fields=[
+                        "student",
+                        "updated_at",
+                    ]
+                )
 
         return registration

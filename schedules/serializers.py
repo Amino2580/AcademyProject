@@ -261,3 +261,37 @@ class PublicScheduleAvailabilitySerializer(
 
     def get_isBooked(self, obj):
         return True
+
+class MyScheduleSerializer(
+    serializers.ModelSerializer
+):
+    dayLabel = serializers.CharField(
+        source="get_day_display",
+        read_only=True,
+    )
+
+    startTime = serializers.TimeField(
+        source="start_time",
+        format="%H:%M",
+        read_only=True,
+    )
+
+    name = serializers.CharField(
+        source="student_name",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ClassBooking
+
+        fields = (
+            "id",
+            "day",
+            "dayLabel",
+            "startTime",
+            "name",
+            "instrument",
+            "notes",
+        )
+
+        read_only_fields = fields

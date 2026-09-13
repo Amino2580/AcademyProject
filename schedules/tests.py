@@ -1,5 +1,7 @@
 from datetime import time
 
+from accounts.models import UserProfile
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -462,4 +464,115 @@ class PublicScheduleAvailabilityAPITests(
         self.assertEqual(
             response.status_code,
             status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+class MyScheduleAPITests(
+    APITestCase
+):
+    def setUp(self):
+        user_model = get_user_model()
+
+        self.user = (
+            user_model.objects.create_user(
+                username="09120000000",
+                password="test-password-123",
+            )
+        )
+
+        UserProfile.objects.create(
+            user=self.user,
+            phone="09120000000",
+        )
+
+        self.own_student = Student.objects.create(
+            full_name="Own Student",
+            phone="09120000000",
+        )
+
+        self.other_student = Student.objects.create(
+            full_name="Other Student",
+            phone="09120000001",
+        )
+
+        self.own_booking = (
+            ClassBooking.objects.create(
+                day=ClassBooking.Weekday.SATURDAY,
+                start_time=time(9, 0),
+                student=self.own_student,
+                student_name="Own Student",
+                phone="09120000000",
+                instrument="piano",
+                notes="Own class",
+            )
+        )
+
+        self.other_booking = (
+            ClassBooking.objects.create(
+                day=ClassBooking.Weekday.SUNDAY,
+                start_time=time(10, 0),
+                student=self.other_student,
+                student_name="Other Student",
+                phone="09120000001",
+                instrument="piano",
+                notes="Other class",
+            )
+        )
+
+        self.url = reverse(
+            "schedule:mine"
+        )
+
+
+    def test_anonymous_user_cannot_access_my_schedule(
+        self
+    ):
+        response = self.client.get(
+            self.url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+
+    def test_user_only_receives_own_classes(
+        self
+    ):
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+        response = self.client.get(
+            self.url
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[0]["id"],
+            self.own_booking.id,
+        )
+
+        self.assertNotEqual(
+            response.data[0]["id"],
+            self.other_booking.id,
+        )
+
+        self.assertNotIn(
+            "phone",
+            response.data[0],
+        )
+
+        self.assertEqual(
+            response.data[0]["startTime"],
+            "09:00",
         )

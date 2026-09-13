@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from rest_framework.filters import (
     OrderingFilter,
     SearchFilter,
@@ -12,11 +14,14 @@ from rest_framework.generics import (
 from rest_framework.permissions import (
     AllowAny,
     IsAdminUser,
+    IsAuthenticated,
 )
 
 from .models import ClassBooking
+
 from .serializers import (
     ClassBookingSerializer,
+    MyScheduleSerializer,
     PublicScheduleAvailabilitySerializer,
 )
 
@@ -104,3 +109,40 @@ class PublicScheduleAvailabilityView(
     ]
 
     pagination_class = None
+
+class MyScheduleListView(
+    ListAPIView
+):
+    serializer_class = MyScheduleSerializer
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    pagination_class = None
+
+    def get_queryset(self):
+        profile = getattr(
+            self.request.user,
+            "profile",
+            None,
+        )
+
+        if profile is None:
+            return ClassBooking.objects.none()
+
+        return (
+            ClassBooking.objects
+            .select_related("student")
+            .filter(
+                Q(
+                    student__phone=profile.phone
+                )
+                | Q(
+                    phone=profile.phone
+                )
+            )
+            .order_by(
+                "day",
+                "start_time",
+            )
+        )

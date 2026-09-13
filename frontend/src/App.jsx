@@ -1,26 +1,48 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Link,
+  Route,
+  Routes,
+} from "react-router-dom";
 
-import Home from "./Pages/Home/Home";
 import About from "./Pages/About/About";
-import Videos from "./Pages/Videos/Videos";
-import Gallery from "./Pages/Gallery/Gallery";
 import Contact from "./Pages/Contact/Contact";
+import Gallery from "./Pages/Gallery/Gallery";
+import Home from "./Pages/Home/Home";
+import MySchedule from "./Pages/MySchedule/MySchedule";
 import Register from "./Pages/Register/Register";
-
-import Login from "./Pages/Admin/Login/Login";
-import Dashboard from "./Pages/Admin/Dashboard/Dashboard";
-import Students from "./Pages/Admin/Students/Students";
-import AdminSchedule from "./Pages/Admin/Schedule/Schedule";
 import PublicSchedule from "./Pages/Schedule/PublicSchedule";
+import Videos from "./Pages/Videos/Videos";
 
-import Navbar from "./Components/Navbar/Navbar";
-import Footer from "./Components/Footer/Footer";
-import SideMenu from "./Components/SideMenu/SideMenu";
-import RegisterModal from "./Components/RegisterModal/RegisterModal";
-import ProtectedRoute from "./Components/Admin/ProtectedRoute/ProtectedRoute.jsx";
+import Dashboard from "./Pages/Admin/Dashboard/Dashboard";
+import Login from "./Pages/Admin/Login/Login";
 import Registrations from "./Pages/Admin/Registrations/Registrations";
+import AdminSchedule from "./Pages/Admin/Schedule/Schedule";
+import Students from "./Pages/Admin/Students/Students";
+
+import Footer from "./Components/Footer/Footer";
+import Navbar from "./Components/Navbar/Navbar";
+import ProtectedUserRoute from "./Components/ProtectedUserRoute/ProtectedUserRoute";
+import RegisterModal from "./Components/RegisterModal/RegisterModal";
+import SideMenu from "./Components/SideMenu/SideMenu";
+
+import ProtectedRoute from "./Components/Admin/ProtectedRoute/ProtectedRoute.jsx";
+
 import "./App.css";
+
+
+function FloatingRegisterLink() {
+  return (
+    <Link
+      className="floating-register-btn"
+      to="/register"
+    >
+      ثبت‌نام کلاس
+    </Link>
+  );
+}
+
 
 function App() {
   const [
@@ -35,7 +57,7 @@ function App() {
 
 
   const openRegisterModal = (
-    selectedSlot = null
+    selectedSlot
   ) => {
     setSelectedScheduleSlot(
       selectedSlot
@@ -55,50 +77,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route
-          path="/schedule"
-          element={
-            <>
-              <Navbar />
-
-              <PublicSchedule
-                onRegister={openRegisterModal}
-              />
-
-              <Footer />
-
-              <button
-                className="floating-register-btn"
-                onClick={() =>
-                  openRegisterModal()
-                }
-              >
-                ثبت‌نام کلاس
-              </button>
-            </>
-          }
-        />
-        <Route
-       path="/gallery"
-       element={
-    <>
-      <SideMenu />
-      <Navbar />
-      <Gallery />
-      <Footer />
-
-      <button
-        className="floating-register-btn"
-        onClick={() =>
-          openRegisterModal()
-        }
-       >
-        ثبت نام کلاس
-       </button>
-        </>
-         }
-       />
-        {/* صفحات اصلی */}
-        <Route
           path="/"
           element={
             <>
@@ -109,15 +87,7 @@ function App() {
 
               <Footer />
 
-              {/* دکمه ثبت نام */}
-              <button
-                className="floating-register-btn"
-                onClick={() =>
-                  openRegisterModal()
-                }
-              >
-                ثبت نام کلاس
-              </button>
+              <FloatingRegisterLink />
             </>
           }
         />
@@ -133,14 +103,7 @@ function App() {
 
               <Footer />
 
-              <button
-                className="floating-register-btn"
-                onClick={() =>
-                  openRegisterModal()
-                }
-              >
-                ثبت نام کلاس
-              </button>
+              <FloatingRegisterLink />
             </>
           }
         />
@@ -156,14 +119,23 @@ function App() {
 
               <Footer />
 
-              <button
-                className="floating-register-btn"
-                onClick={() =>
-                  openRegisterModal()
-                }
-              >
-                ثبت نام کلاس
-              </button>
+              <FloatingRegisterLink />
+            </>
+          }
+        />
+
+        <Route
+          path="/gallery"
+          element={
+            <>
+              <SideMenu />
+              <Navbar />
+
+              <Gallery />
+
+              <Footer />
+
+              <FloatingRegisterLink />
             </>
           }
         />
@@ -179,14 +151,7 @@ function App() {
 
               <Footer />
 
-              <button
-                className="floating-register-btn"
-                onClick={() =>
-                  openRegisterModal()
-                }
-              >
-                ثبت نام کلاس
-              </button>
+              <FloatingRegisterLink />
             </>
           }
         />
@@ -201,27 +166,63 @@ function App() {
               <Register />
 
               <Footer />
-
-              <button
-                className="floating-register-btn"
-                onClick={() =>
-                  openRegisterModal()
-                }
-              >
-                ثبت نام کلاس
-              </button>
             </>
           }
         />
 
-        {/* پنل مدیریت */}
+        <Route
+          path="/schedule"
+          element={
+            <>
+              <Navbar />
+
+              <PublicSchedule
+                onRegister={
+                  openRegisterModal
+                }
+              />
+
+              <Footer />
+
+              <FloatingRegisterLink />
+            </>
+          }
+        />
 
         <Route
-          path="/admin/login"
+          path="/login"
           element={<Login />}
         />
 
-        <Route element={<ProtectedRoute />}>
+        <Route
+          path="/admin/login"
+          element={
+            <Login adminOnly />
+          }
+        />
+
+        <Route
+          element={
+            <ProtectedUserRoute />
+          }
+        >
+          <Route
+            path="/my-schedule"
+            element={
+              <>
+                <Navbar />
+
+                <MySchedule />
+
+                <Footer />
+              </>
+            }
+          />
+        </Route>
+
+        <Route
+          element={<ProtectedRoute />}
+        >
           <Route
             path="/admin"
             element={<Dashboard />}
@@ -242,10 +243,8 @@ function App() {
             element={<AdminSchedule />}
           />
         </Route>
-
       </Routes>
 
-      {/* Modal ثبت نام */}
       <RegisterModal
         isOpen={isRegisterOpen}
         selectedSlot={
@@ -253,9 +252,9 @@ function App() {
         }
         onClose={closeRegisterModal}
       />
-
     </BrowserRouter>
   );
 }
+
 
 export default App;

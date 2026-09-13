@@ -21,6 +21,10 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
 
   transition: all 0.3s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-decoration: none !important;
 }
 
 .floating-register-btn:hover {

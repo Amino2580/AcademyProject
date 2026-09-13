@@ -365,3 +365,138 @@ class RegistrationRequestAdminAPITests(APITestCase):
             Student.objects.count(),
             0,
         )
+    def test_approving_scheduled_registration_creates_booking(
+            self
+        ):
+            self.registration.preferred_day = (
+                RegistrationRequest
+                .PreferredDay
+                .SATURDAY
+            )
+
+            self.registration.preferred_time = time(
+                7,
+                30,
+            )
+
+            self.registration.save(
+                update_fields=[
+                    "preferred_day",
+                    "preferred_time",
+                ]
+            )
+
+            self.client.force_authenticate(
+                user=self.admin_user
+            )
+
+            response = self.client.patch(
+                self.detail_url,
+                {
+                    "status": (
+                        RegistrationRequest
+                        .Status
+                        .APPROVED
+                    ),
+                },
+                format="json",
+            )
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_200_OK,
+            )
+
+            booking = ClassBooking.objects.get(
+                day=(
+                    RegistrationRequest
+                    .PreferredDay
+                    .SATURDAY
+                ),
+                start_time=time(7, 30),
+            )
+
+            self.assertEqual(
+                booking.phone,
+                self.registration.phone,
+            )
+
+            self.assertEqual(
+                booking.student_name,
+                self.registration.full_name,
+            )
+
+            self.assertEqual(
+                booking.instrument,
+                self.registration.instrument,
+            )
+
+            self.assertEqual(
+                booking.student.phone,
+                self.registration.phone,
+            )
+
+
+    def test_cannot_approve_taken_time_slot(
+        self
+    ):
+        self.registration.preferred_day = (
+            RegistrationRequest
+            .PreferredDay
+            .SATURDAY
+        )
+
+        self.registration.preferred_time = time(
+            7,
+            30,
+        )
+
+        self.registration.save(
+            update_fields=[
+                "preferred_day",
+                "preferred_time",
+            ]
+        )
+
+        ClassBooking.objects.create(
+            day=ClassBooking.Weekday.SATURDAY,
+            start_time=time(7, 30),
+            student_name="Other Student",
+            phone="09120000001",
+            instrument="piano",
+            notes="",
+        )
+
+        self.client.force_authenticate(
+            user=self.admin_user
+        )
+
+        response = self.client.patch(
+            self.detail_url,
+            {
+                "status": (
+                    RegistrationRequest
+                    .Status
+                    .APPROVED
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.registration.refresh_from_db()
+
+        self.assertEqual(
+            self.registration.status,
+            RegistrationRequest.Status.NEW,
+        )
+
+        self.assertFalse(
+            Student.objects.filter(
+                phone=self.registration.phone,
+            ).exists()
+        )

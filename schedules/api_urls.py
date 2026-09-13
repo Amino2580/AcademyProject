@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    MyScheduleListView,
     PublicScheduleAvailabilityView,
 )
 
@@ -13,5 +14,10 @@ urlpatterns = [
         "availability/",
         PublicScheduleAvailabilityView.as_view(),
         name="availability",
+    ),
+    path(
+        "mine/",
+        MyScheduleListView.as_view(),
+        name="mine",
     ),
 ]
