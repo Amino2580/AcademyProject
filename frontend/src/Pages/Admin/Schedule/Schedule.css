@@ -15,7 +15,19 @@
   color: white;
   direction: rtl;
   box-sizing: border-box;
-  font-family: inherit;
+  font-family: "Vazirmatn", Tahoma, sans-serif;
+  font-weight: 400;
+  font-synthesis: none;
+}
+
+.schedule-page,
+.schedule-page * {
+  font-family: "Vazirmatn", Tahoma, sans-serif;
+}
+
+.schedule-page strong,
+.schedule-page th {
+  font-weight: 600;
 }
 
 
@@ -45,7 +57,7 @@
 
 .schedule-title p {
   margin: 10px 0 0;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.72);
   font-size: 14px;
 }
 
@@ -150,7 +162,7 @@
 .filter-group label {
   font-size: 13px;
   color:
-    rgba(255, 255, 255, 0.65);
+    rgba(255, 255, 255, 0.76);
 }
 
 .filter-group select,
@@ -240,7 +252,7 @@
   font-size: 11px;
 
   color:
-    rgba(255, 255, 255, 0.55);
+    rgba(255, 255, 255, 0.68);
 }
 
 
@@ -258,7 +270,7 @@
   gap: 25px;
 
   color:
-    rgba(255, 255, 255, 0.65);
+    rgba(255, 255, 255, 0.76);
 
   font-size: 13px;
 }
@@ -368,7 +380,7 @@
   width: 80px;
 
   color:
-    rgba(255, 255, 255, 0.55);
+    rgba(255, 255, 255, 0.68);
 
   font-size: 12px;
 
@@ -473,7 +485,7 @@
   font-size: 10px;
 
   color:
-    rgba(255, 255, 255, 0.55);
+    rgba(255, 255, 255, 0.68);
 }
 
 .schedule-slot.free
@@ -714,7 +726,7 @@
 
   color: #0f172a;
 
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .primary-btn:hover {
@@ -1078,7 +1090,8 @@
     color: #38bdf8;
 
     font-size: 21px;
-    font-weight: 900;
+    font-family: "Lalezar", sans-serif;
+    font-weight: 400;
 
     white-space: nowrap;
   }
@@ -1178,14 +1191,14 @@
   color: #38bdf8;
 
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .schedule-week-copy strong {
   color: #e0f2fe;
 
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .schedule-week-switcher {
@@ -1211,7 +1224,7 @@
 
   padding: 10px 14px;
 
-  color: rgba(226, 232, 240, 0.58);
+  color: rgba(226, 232, 240, 0.72);
   background: transparent;
 
   border: 1px solid transparent;
@@ -1252,13 +1265,13 @@
 
 .schedule-week-switcher span {
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .schedule-week-switcher small {
-  color: rgba(186, 230, 253, 0.62);
+  color: rgba(186, 230, 253, 0.74);
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .week-loading {
@@ -1293,16 +1306,16 @@
   color: inherit;
 
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .schedule-day-date {
   margin-top: 5px;
 
-  color: rgba(186, 230, 253, 0.57);
+  color: rgba(186, 230, 253, 0.76);
 
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .schedule-table thead th.holiday-column
@@ -1330,7 +1343,7 @@
 
   font-size: 8px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 
@@ -1405,9 +1418,9 @@
 }
 
 .mobile-day-heading span {
-  color: rgba(186, 230, 253, 0.58);
+  color: rgba(186, 230, 253, 0.72);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .mobile-day.holiday
