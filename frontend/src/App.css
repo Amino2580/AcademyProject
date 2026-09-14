@@ -31,3 +31,22 @@
   transform: translateY(-4px) !important;
   box-shadow: 0 12px 30px rgba(56, 189, 248, 0.4) !important;
 }
+
+@media (max-width: 600px) {
+  .floating-register-btn {
+    right: 12px !important;
+    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    min-height: 46px !important;
+    padding: 10px 18px !important;
+    font-size: 13px !important;
+    border-radius: 999px !important;
+  }
+
+  .floating-register-btn:hover {
+    transform: none !important;
+  }
+
+  .floating-register-btn:active {
+    transform: scale(0.98) !important;
+  }
+}

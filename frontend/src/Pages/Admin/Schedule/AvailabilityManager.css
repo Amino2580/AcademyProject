@@ -654,3 +654,149 @@
     padding: 15px;
   }
 }
+
+.availability-swipe-hint {
+  display: none;
+}
+
+@media (max-width: 650px) {
+  .availability-manager {
+    margin-bottom: 20px;
+    padding: 15px 12px;
+    border-radius: 17px;
+  }
+
+  .availability-header {
+    gap: 14px;
+    margin-bottom: 17px;
+  }
+
+  .availability-header h2 {
+    font-size: 21px;
+  }
+
+  .availability-header p {
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .availability-count {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .availability-count strong {
+    font-size: 20px;
+  }
+
+  .availability-count span {
+    margin: 0;
+    font-size: 10px;
+  }
+
+  .availability-tabs {
+    margin-bottom: 14px;
+  }
+
+  .availability-tabs button {
+    min-height: 46px;
+    font-size: 11px;
+  }
+
+  .availability-swipe-hint {
+    display: block;
+    margin: 0 2px 9px;
+    color: rgba(186, 230, 253, 0.58);
+    font-size: 9px;
+    font-weight: 400;
+  }
+
+  .weekly-days-grid {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 1px 1px 9px;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .weekly-days-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .weekly-day-card,
+  .weekly-day-card:nth-child(5) {
+    min-width: 0;
+    flex: 0 0 min(88vw, 340px);
+    padding: 16px;
+    scroll-snap-align: start;
+  }
+
+  .weekly-day-head strong {
+    font-size: 15px;
+  }
+
+  .day-switch {
+    width: 50px;
+    height: 30px;
+    padding: 4px;
+  }
+
+  .day-switch span {
+    width: 20px;
+    height: 20px;
+  }
+
+  .day-switch.on span {
+    transform: translateX(-20px);
+  }
+
+  .day-range-row select,
+  .availability-field select,
+  .availability-field input,
+  .save-day-button,
+  .add-exception-button {
+    min-height: 46px;
+  }
+
+  .exception-form,
+  .exceptions-list-card {
+    padding: 15px;
+  }
+
+  .full-day-check {
+    min-height: 54px;
+  }
+
+  .exception-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .exception-item-main strong,
+  .exception-item-main small {
+    white-space: normal;
+  }
+
+  .exception-item > button {
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 390px) {
+  .weekly-day-card,
+  .weekly-day-card:nth-child(5) {
+    flex-basis: calc(100vw - 44px);
+  }
+
+  .availability-tabs button {
+    padding-inline: 7px;
+    font-size: 10px;
+  }
+}
+

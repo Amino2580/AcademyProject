@@ -19,3 +19,20 @@
     padding: 25px 20px;
   }
 }
+
+@media (max-width: 900px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-content {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-content {
+    padding: 14px 10px 28px;
+  }
+}

@@ -165,6 +165,11 @@
   opacity: 0.72;
 }
 
+.public-schedule-mobile {
+  display: none;
+}
+
+
 .public-schedule-message {
   max-width: 1500px;
   margin: 0 auto;
@@ -194,15 +199,230 @@
 
 @media (max-width: 768px) {
   .public-schedule-page {
-    padding: 120px 15px 45px;
+    padding: 112px 14px 45px;
   }
 
   .public-schedule-header {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .public-schedule-header h1 {
+    font-size: clamp(28px, 9vw, 36px);
+    line-height: 1.35;
   }
 
   .public-schedule-date-card {
     width: min(100%, 360px);
+  }
+
+  .public-schedule-desktop {
+    display: none;
+  }
+
+  .public-schedule-mobile {
+    width: min(100%, 560px);
+    display: block;
+    margin: 0 auto;
+  }
+
+  .public-mobile-day-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 1px 10px;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .public-mobile-day-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .public-mobile-day-tabs button {
+    min-width: 88px;
+    min-height: 78px;
+    flex: 1 0 88px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    padding: 9px 8px;
+    color: rgba(226, 232, 240, 0.76);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition:
+      color 180ms ease,
+      background 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .public-mobile-day-tabs button strong {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .public-mobile-day-tabs button span {
+    color: rgba(186, 230, 253, 0.67);
+    font-size: 10px;
+    font-weight: 400;
+  }
+
+  .public-mobile-day-tabs button small {
+    color: #67e8f9;
+    font-size: 8px;
+    font-weight: 500;
+  }
+
+  .public-mobile-day-tabs button.active {
+    color: #ffffff;
+    background:
+      linear-gradient(
+        145deg,
+        rgba(14, 165, 233, 0.18),
+        rgba(56, 189, 248, 0.08)
+      );
+    border-color: rgba(56, 189, 248, 0.52);
+    box-shadow:
+      inset 0 2px 0 rgba(103, 232, 249, 0.72),
+      0 10px 26px rgba(2, 132, 199, 0.08);
+  }
+
+  .public-mobile-day-tabs button.holiday strong,
+  .public-mobile-day-tabs button.holiday span {
+    color: #fda4af;
+  }
+
+  .public-mobile-day-panel {
+    margin-top: 8px;
+    padding: 16px;
+    background:
+      linear-gradient(
+        150deg,
+        rgba(20, 38, 64, 0.98),
+        rgba(14, 29, 50, 0.98)
+      );
+    border: 1px solid rgba(56, 189, 248, 0.17);
+    border-radius: 18px;
+    box-shadow: 0 20px 55px rgba(2, 8, 23, 0.22);
+  }
+
+  .public-mobile-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 2px 2px 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  }
+
+  .public-mobile-day-header span {
+    color: #38bdf8;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .public-mobile-day-header h2 {
+    margin: 4px 0 0;
+    color: #f8fafc;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.55;
+  }
+
+  .public-mobile-day-panel.holiday
+  .public-mobile-day-header h2 {
+    color: #fda4af;
+  }
+
+  .public-mobile-day-header em {
+    flex: 0 0 auto;
+    padding: 5px 10px;
+    color: #67e8f9;
+    background: rgba(6, 182, 212, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.18);
+    border-radius: 999px;
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  .public-mobile-slots {
+    display: grid;
+    gap: 9px;
+  }
+
+  .public-mobile-slot-row {
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr);
+    align-items: stretch;
+    gap: 9px;
+  }
+
+  .public-mobile-slot-row > time {
+    direction: ltr;
+    display: grid;
+    place-items: center;
+    color: #dbeafe;
+    background: rgba(2, 8, 23, 0.28);
+    border: 1px solid rgba(148, 163, 184, 0.13);
+    border-radius: 12px;
+    font-family: "Lalezar", sans-serif;
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .public-mobile-slot-row .public-schedule-slot {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    text-align: right;
+  }
+
+  .public-mobile-slot-row .public-schedule-slot small {
+    color: rgba(167, 243, 208, 0.68);
+    font-size: 9px;
+    font-weight: 400;
+  }
+
+  .public-mobile-slot-row .public-schedule-slot:active:not(:disabled) {
+    transform: scale(0.985);
+  }
+}
+
+@media (max-width: 420px) {
+  .public-schedule-page {
+    padding-inline: 10px;
+  }
+
+  .public-mobile-day-panel {
+    padding: 12px;
+  }
+
+  .public-mobile-day-tabs button {
+    min-width: 82px;
+    flex-basis: 82px;
+  }
+
+  .public-mobile-slot-row {
+    grid-template-columns: 62px minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .public-mobile-slot-row .public-schedule-slot {
+    padding-inline: 11px;
   }
 }

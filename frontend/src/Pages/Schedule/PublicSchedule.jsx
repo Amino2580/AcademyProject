@@ -85,6 +85,25 @@ const TIME_SLOTS = Array.from(
 );
 
 
+const getSlotDetails = (slotStatus) => {
+  const isBooked =
+    slotStatus === "booked";
+
+  const isUnavailable =
+    slotStatus !== "free";
+
+  return {
+    isBooked,
+    isUnavailable,
+    statusLabel: isBooked
+      ? "ظرفیت تکمیل"
+      : isUnavailable
+        ? "غیرقابل رزرو"
+        : "ظرفیت آزاد",
+  };
+};
+
+
 function PublicSchedule({
   onRegister,
 }) {
@@ -101,6 +120,15 @@ function PublicSchedule({
     currentDateTime,
     setCurrentDateTime,
   ] = useState(() => new Date());
+
+  const [
+    selectedMobileDay,
+    setSelectedMobileDay,
+  ] = useState(
+    () => DAYS[
+      (new Date().getDay() + 1) % 7
+    ].value
+  );
 
 
   const loadAvailability = useCallback(
@@ -231,6 +259,13 @@ function PublicSchedule({
   );
 
 
+  const activeMobileDay =
+    datedDays.find(
+      (day) =>
+        day.value === selectedMobileDay
+    ) || datedDays[0];
+
+
   return (
     <main
       className="public-schedule-page"
@@ -266,117 +301,250 @@ function PublicSchedule({
           در حال دریافت برنامه کلاس‌ها...
         </section>
       ) : (
-        <section className="public-schedule-card">
-          <div className="public-schedule-table-wrapper">
-            <table className="public-schedule-table">
-              <thead>
-                <tr>
-                  <th>
-                    ساعت
-                  </th>
+        <div className="public-schedule-content">
+          <section className="public-schedule-card public-schedule-desktop">
+            <div className="public-schedule-table-wrapper">
+              <table className="public-schedule-table">
+                <thead>
+                  <tr>
+                    <th>
+                      ساعت
+                    </th>
 
-                  {datedDays.map((day) => (
-                    <th
-                      key={day.value}
-                      className={
-                        [
-                          day.isHoliday
-                            ? "holiday-column"
-                            : "",
-                          day.isToday
-                            ? "today-column"
-                            : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")
-                      }
-                    >
-                      <span className="public-schedule-day-name">
-                        {day.label}
-                      </span>
+                    {datedDays.map((day) => (
+                      <th
+                        key={day.value}
+                        className={
+                          [
+                            day.isHoliday
+                              ? "holiday-column"
+                              : "",
+                            day.isToday
+                              ? "today-column"
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")
+                        }
+                      >
+                        <span className="public-schedule-day-name">
+                          {day.label}
+                        </span>
 
-                      <span className="public-schedule-day-date">
-                        {formatPersianDayMonth(
-                          day.date
+                        <span className="public-schedule-day-date">
+                          {formatPersianDayMonth(
+                            day.date
+                          )}
+                        </span>
+
+                        {day.isToday && (
+                          <em>
+                            امروز
+                          </em>
                         )}
-                      </span>
-
-                      {day.isToday && (
-                        <em>
-                          امروز
-                        </em>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {TIME_SLOTS.map((time) => (
-                  <tr key={time}>
-                    <th className="public-schedule-time">
-                      {time}
-                    </th>
-
-                    {datedDays.map((day) => {
-                      const slotStatus =
-                        slotStatuses.get(
-                          `${day.value}-${time}`
-                        ) || "free";
-
-                      const isBooked =
-                        slotStatus === "booked";
-
-                      const isUnavailable =
-                        slotStatus !== "free";
-
-                      const statusLabel =
-                        isBooked
-                          ? "ظرفیت تکمیل"
-                          : isUnavailable
-                            ? "غیرقابل رزرو"
-                            : "ظرفیت آزاد";
-
-                      return (
-                        <td
-                          key={`${day.value}-${time}`}
-                        >
-                          <button
-                            type="button"
-                            className={
-                              `public-schedule-slot ${
-                                isBooked
-                                  ? "is-full"
-                                  : isUnavailable
-                                    ? "is-closed"
-                                    : "is-free"
-                              }`
-                            }
-                            disabled={isUnavailable}
-                            onClick={() =>
-                              onRegister({
-                                day: day.value,
-                                dayLabel: day.label,
-                                startTime: time,
-                              })
-                            }
-                            aria-label={
-                              `${day.label} ساعت ${time} - ${statusLabel}`
-                            }
-                          >
-                            <span>
-                              {statusLabel}
-                            </span>
-                          </button>
-                        </td>
-                      );
-                    })}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                </thead>
+
+                <tbody>
+                  {TIME_SLOTS.map((time) => (
+                    <tr key={time}>
+                      <th className="public-schedule-time">
+                        {time}
+                      </th>
+
+                      {datedDays.map((day) => {
+                        const slotStatus =
+                          slotStatuses.get(
+                            `${day.value}-${time}`
+                          ) || "free";
+
+                        const {
+                          isBooked,
+                          isUnavailable,
+                          statusLabel,
+                        } = getSlotDetails(
+                          slotStatus
+                        );
+
+                        return (
+                          <td
+                            key={`${day.value}-${time}`}
+                          >
+                            <button
+                              type="button"
+                              className={
+                                `public-schedule-slot ${
+                                  isBooked
+                                    ? "is-full"
+                                    : isUnavailable
+                                      ? "is-closed"
+                                      : "is-free"
+                                }`
+                              }
+                              disabled={isUnavailable}
+                              onClick={() =>
+                                onRegister({
+                                  day: day.value,
+                                  dayLabel: day.label,
+                                  startTime: time,
+                                })
+                              }
+                              aria-label={
+                                `${day.label} ساعت ${time} - ${statusLabel}`
+                              }
+                            >
+                              <span>
+                                {statusLabel}
+                              </span>
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section
+            className="public-schedule-mobile"
+            aria-label="برنامه هفتگی کلاس‌ها"
+          >
+            <div
+              className="public-mobile-day-tabs"
+              role="tablist"
+              aria-label="انتخاب روز هفته"
+            >
+              {datedDays.map((day) => (
+                <button
+                  type="button"
+                  role="tab"
+                  key={day.dateKey}
+                  className={[
+                    day.value === activeMobileDay?.value
+                      ? "active"
+                      : "",
+                    day.isHoliday
+                      ? "holiday"
+                      : "",
+                    day.isToday
+                      ? "today"
+                      : "",
+                  ].filter(Boolean).join(" ")}
+                  aria-selected={
+                    day.value === activeMobileDay?.value
+                  }
+                  onClick={() =>
+                    setSelectedMobileDay(
+                      day.value
+                    )
+                  }
+                >
+                  <strong>{day.label}</strong>
+                  <span>
+                    {formatPersianDayMonth(
+                      day.date
+                    )}
+                  </span>
+                  {day.isToday && (
+                    <small>امروز</small>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {activeMobileDay && (
+              <article
+                className={
+                  `public-mobile-day-panel ${
+                    activeMobileDay.isHoliday
+                      ? "holiday"
+                      : ""
+                  }`
+                }
+                role="tabpanel"
+              >
+                <header className="public-mobile-day-header">
+                  <div>
+                    <span>زمان‌های قابل رزرو</span>
+                    <h2>
+                      {activeMobileDay.label}،{" "}
+                      {formatPersianDayMonth(
+                        activeMobileDay.date
+                      )}
+                    </h2>
+                  </div>
+
+                  {activeMobileDay.isToday && (
+                    <em>امروز</em>
+                  )}
+                </header>
+
+                <div className="public-mobile-slots">
+                  {TIME_SLOTS.map((time) => {
+                    const slotStatus =
+                      slotStatuses.get(
+                        `${activeMobileDay.value}-${time}`
+                      ) || "free";
+
+                    const {
+                      isBooked,
+                      isUnavailable,
+                      statusLabel,
+                    } = getSlotDetails(
+                      slotStatus
+                    );
+
+                    return (
+                      <div
+                        className="public-mobile-slot-row"
+                        key={time}
+                      >
+                        <time dateTime={time}>
+                          {time}
+                        </time>
+
+                        <button
+                          type="button"
+                          className={
+                            `public-schedule-slot ${
+                              isBooked
+                                ? "is-full"
+                                : isUnavailable
+                                  ? "is-closed"
+                                  : "is-free"
+                            }`
+                          }
+                          disabled={isUnavailable}
+                          onClick={() =>
+                            onRegister({
+                              day: activeMobileDay.value,
+                              dayLabel: activeMobileDay.label,
+                              startTime: time,
+                            })
+                          }
+                          aria-label={
+                            `${activeMobileDay.label} ساعت ${time} - ${statusLabel}`
+                          }
+                        >
+                          <span>{statusLabel}</span>
+                          {!isUnavailable && (
+                            <small>
+                              انتخاب این ساعت
+                            </small>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </article>
+            )}
+          </section>
+        </div>
       )}
     </main>
   );

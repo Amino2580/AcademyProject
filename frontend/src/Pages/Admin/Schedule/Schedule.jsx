@@ -219,6 +219,15 @@ function Schedule() {
   ] = useState(0);
 
   const [
+    selectedMobileDay,
+    setSelectedMobileDay,
+  ] = useState(
+    () => DAY_ITEMS[
+      (new Date().getDay() + 1) % 7
+    ].value
+  );
+
+  const [
     unavailableSlotIds,
     setUnavailableSlotIds,
   ] = useState(() => new Set());
@@ -530,6 +539,13 @@ useEffect(() => {
           (day) =>
             day.label === dayFilter
         );
+
+  const activeMobileDay =
+    filteredWeekDays.find(
+      (day) =>
+        day.value === selectedMobileDay
+    ) || filteredWeekDays[0] || null;
+
 
   const matchesSearch = (booking) => {
     if (!search.trim()) return true;
@@ -1051,57 +1067,110 @@ useEffect(() => {
       {/* ================= MOBILE ================= */}
 
       <section className="mobile-schedule">
-
-        {filteredWeekDays.map((day) => {
-
-          const daySlots = TIMES.filter(
-            (time) =>
-              isVisible(day.label, time)
-          );
-
-          if (!daySlots.length) {
-            return null;
-          }
-
-          return (
-            <div
-              className={`mobile-day ${
-                day.isHoliday ? "holiday" : ""
-              }`}
+        <div
+          className="admin-mobile-day-tabs"
+          role="tablist"
+          aria-label="انتخاب روز برنامه"
+        >
+          {filteredWeekDays.map((day) => (
+            <button
+              type="button"
+              role="tab"
               key={day.isoDate}
+              className={[
+                day.value === activeMobileDay?.value
+                  ? "active"
+                  : "",
+                day.isHoliday
+                  ? "holiday"
+                  : "",
+                day.isoDate === todayIsoDate
+                  ? "today"
+                  : "",
+              ].filter(Boolean).join(" ")}
+              aria-selected={
+                day.value === activeMobileDay?.value
+              }
+              onClick={() => {
+                setSelectedMobileDay(
+                  day.value
+                );
+                setSelectedId(null);
+                setModal(null);
+              }}
             >
-              <div className="mobile-day-heading">
-                <h2>{day.label}</h2>
-                <span>
-                  {formatDayMonth(day.date)}
-                </span>
+              <strong>{day.label}</strong>
+              <span>
+                {formatDayMonth(day.date)}
+              </span>
+              {day.isoDate === todayIsoDate && (
+                <small>امروز</small>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {activeMobileDay ? (
+          <div
+            className={
+              `mobile-day ${
+                activeMobileDay.isHoliday
+                  ? "holiday"
+                  : ""
+              }`
+            }
+          >
+            <div className="mobile-day-heading">
+              <div>
+                <span>برنامه روز</span>
+                <h2>
+                  {activeMobileDay.label}،{" "}
+                  {formatDayMonth(
+                    activeMobileDay.date
+                  )}
+                </h2>
               </div>
 
-              {daySlots.map((time) => {
+              {activeMobileDay.isoDate
+                === todayIsoDate && (
+                <em>امروز</em>
+              )}
+            </div>
 
-                const id =
-                  makeId(day.label, time);
+            <div className="mobile-day-slots">
+              {TIMES.filter(
+                (time) =>
+                  isVisible(
+                    activeMobileDay.label,
+                    time
+                  )
+              ).map((time) => {
+                const id = makeId(
+                  activeMobileDay.label,
+                  time
+                );
 
                 const booking =
                   bookings[id];
 
                 const unavailable =
                   isSlotUnavailable(
-                    day.label,
+                    activeMobileDay.label,
                     time
                   );
 
                 return (
                   <button
                     type="button"
-                    className={`
-                      mobile-slot
-                      ${booking
-                        ? "booked"
-                        : unavailable
-                          ? "unavailable"
-                          : "free"}
-                    `}
+                    className={
+                      `mobile-slot ${
+                        booking
+                          ? "booked"
+                          : unavailable
+                            ? "unavailable"
+                            : "free"
+                      }`
+                    }
                     key={id}
                     disabled={unavailable}
                     onClick={() => {
@@ -1111,27 +1180,60 @@ useEffect(() => {
                         ? showDetails(id)
                         : openBooking(id);
                     }}
+                    aria-label={
+                      `${activeMobileDay.label} ساعت ${time} - ${
+                        booking
+                          ? booking.name
+                          : unavailable
+                            ? "بسته"
+                            : "آزاد"
+                      }`
+                    }
                   >
-                    <span>
+                    <span className="mobile-slot-time">
                       {time}
                     </span>
 
-                    <strong>
-                      {booking
-                        ? booking.name
-                        : unavailable
-                          ? "بسته"
-                          : "آزاد"}
-                    </strong>
+                    <span className="mobile-slot-copy">
+                      <strong>
+                        {booking
+                          ? booking.name
+                          : unavailable
+                            ? "بسته"
+                            : "زمان آزاد"}
+                      </strong>
+
+                      <small>
+                        {booking
+                          ? booking.instrument
+                            || "کلاس پیانو"
+                          : unavailable
+                            ? "خارج از زمان تدریس"
+                            : "برای ثبت رزرو لمس کنید"}
+                      </small>
+                    </span>
                   </button>
                 );
-
               })}
 
+              {!TIMES.some(
+                (time) =>
+                  isVisible(
+                    activeMobileDay.label,
+                    time
+                  )
+              ) && (
+                <div className="mobile-schedule-empty">
+                  نتیجه‌ای با فیلترهای فعلی پیدا نشد.
+                </div>
+              )}
             </div>
-          );
-        })}
-
+          </div>
+        ) : (
+          <div className="mobile-schedule-empty">
+            روزی برای نمایش وجود ندارد.
+          </div>
+        )}
       </section>
 
       {/* ================= BOOKING MODAL ================= */}

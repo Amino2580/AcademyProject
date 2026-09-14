@@ -526,7 +526,12 @@ function AvailabilityManager({
       )}
 
       {activeTab === "weekly" ? (
-        <div className="weekly-days-grid">
+        <>
+          <p className="availability-swipe-hint">
+            برای دیدن روزهای دیگر، کارت‌ها را بکشید.
+          </p>
+
+          <div className="weekly-days-grid">
           {DAYS.map((day) => {
             const ranges = rangesForDay(day.value);
             const isActive = ranges.length > 0;
@@ -621,7 +626,8 @@ function AvailabilityManager({
               </article>
             );
           })}
-        </div>
+          </div>
+        </>
       ) : (
         <div className="exceptions-layout">
           <form

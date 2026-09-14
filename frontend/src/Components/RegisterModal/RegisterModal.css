@@ -265,3 +265,29 @@
   color: #a9b4c5;
   font-size: 12px;
 }
+
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .register-modal {
+    max-height: 92dvh;
+    padding: 30px 18px calc(20px + env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .submit-register {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .modal-close {
+    width: 44px;
+    height: 44px;
+  }
+}

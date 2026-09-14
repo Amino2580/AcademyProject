@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Link,
   useLocation,
@@ -15,6 +16,11 @@ import "./Navbar.css";
 
 function Navbar() {
   const location = useLocation();
+
+  const [
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+  ] = useState(false);
 
   const authUser = getAuthUser();
   const authenticated = isAuthenticated();
@@ -71,6 +77,12 @@ function Navbar() {
   ];
 
 
+  const mobileMenuItems = [
+    ...rightMenuItems,
+    ...leftMenuItems,
+  ];
+
+
   const getLinkClassName = (
     path
   ) => {
@@ -121,6 +133,63 @@ function Navbar() {
                   getLinkClassName(
                     item.path
                   )
+                }
+              >
+                {item.title}
+              </Link>
+            )
+          )}
+        </div>
+
+        <button
+          type="button"
+          className={
+            `navbar-mobile-toggle ${
+              isMobileMenuOpen
+                ? "open"
+                : ""
+            }`
+          }
+          aria-label={
+            isMobileMenuOpen
+              ? "بستن منوی سایت"
+              : "باز کردن منوی سایت"
+          }
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="navbar-mobile-menu"
+          onClick={() =>
+            setIsMobileMenuOpen(
+              (isOpen) => !isOpen
+            )
+          }
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
+        <div
+          id="navbar-mobile-menu"
+          className={
+            `navbar-mobile-menu ${
+              isMobileMenuOpen
+                ? "open"
+                : ""
+            }`
+          }
+        >
+          {mobileMenuItems.map(
+            (item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={
+                  getLinkClassName(
+                    item.path
+                  )
+                }
+                onClick={() =>
+                  setIsMobileMenuOpen(false)
                 }
               >
                 {item.title}
