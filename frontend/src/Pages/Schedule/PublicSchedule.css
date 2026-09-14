@@ -3,6 +3,13 @@
   padding: 145px 4% 70px;
   color: #ffffff;
   background: #0d182c;
+  font-weight: 400;
+  font-synthesis: none;
+}
+
+.public-schedule-page,
+.public-schedule-page * {
+  font-family: "Vazirmatn", Tahoma, sans-serif;
 }
 
 .public-schedule-header {
@@ -17,6 +24,8 @@
 .public-schedule-header h1 {
   margin: 0;
   font-size: clamp(30px, 4vw, 48px);
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .public-schedule-date-card {
@@ -45,7 +54,51 @@
 .public-schedule-table th {
   padding: 16px 10px;
   color: #d9e2f0;
-  font-weight: 700;
+  font-weight: 600;
+}
+
+.public-schedule-table thead th {
+  height: 78px;
+}
+
+.public-schedule-day-name,
+.public-schedule-day-date {
+  display: block;
+}
+
+.public-schedule-day-name {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.public-schedule-day-date {
+  margin-top: 5px;
+  color: rgba(186, 230, 253, 0.76);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.public-schedule-table th.holiday-column
+.public-schedule-day-date {
+  color: rgba(253, 164, 175, 0.88);
+}
+
+.public-schedule-table thead th.today-column {
+  box-shadow: inset 0 3px 0 #38bdf8;
+}
+
+.public-schedule-table thead th em {
+  display: inline-flex;
+  margin-top: 5px;
+  padding: 2px 7px;
+  color: #67e8f9;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.17);
+  border-radius: 999px;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 500;
 }
 
 
@@ -57,9 +110,12 @@
   min-width: 135px;
 }
 
-.public-schedule-time {
+.public-schedule-table .public-schedule-time {
   direction: ltr;
   color: #9ca9bd;
+  font-family: "Lalezar", sans-serif;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
 .public-schedule-slot {
@@ -74,7 +130,9 @@
   padding: 12px;
   border: 1px solid;
   border-radius: 13px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.65;
   transition:
     transform 180ms ease,
     border-color 180ms ease;
@@ -96,7 +154,7 @@
   color: #ff7a88;
   border-color: rgb(255 100 116 / 25%);
   background: rgb(130 37 49 / 13%);
-  opacity: 0.65;
+  opacity: 0.78;
 }
 
 .public-schedule-slot.is-closed {
@@ -104,7 +162,7 @@
   color: #94a3b8;
   border-color: rgb(148 163 184 / 18%);
   background: rgb(71 85 105 / 10%);
-  opacity: 0.62;
+  opacity: 0.72;
 }
 
 .public-schedule-message {
@@ -130,6 +188,8 @@
   color: #35bdf2;
   cursor: pointer;
   background: transparent;
+  font-family: inherit;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {

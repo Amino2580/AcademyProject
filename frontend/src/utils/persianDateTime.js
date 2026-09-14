@@ -10,6 +10,16 @@ const PERSIAN_DATE_FORMATTER =
   );
 
 
+const PERSIAN_DAY_MONTH_FORMATTER =
+  new Intl.DateTimeFormat(
+    "fa-IR-u-ca-persian",
+    {
+      day: "numeric",
+      month: "long",
+    }
+  );
+
+
 const PERSIAN_TIME_FORMATTER =
   new Intl.DateTimeFormat(
     "fa-IR",
@@ -44,6 +54,14 @@ export const formatPersianFullDate = (
 
   return `${weekday}، ${dateText}`;
 };
+
+
+export const formatPersianDayMonth = (
+  date
+) =>
+  PERSIAN_DAY_MONTH_FORMATTER.format(
+    date
+  );
 
 
 export const formatPersianTime = (

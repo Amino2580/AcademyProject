@@ -9,6 +9,9 @@ import {
   getPublicScheduleAvailability,
 } from "../../services/schedule";
 import CurrentDateTimeCard from "../../Components/CurrentDateTimeCard/CurrentDateTimeCard";
+import {
+  formatPersianDayMonth,
+} from "../../utils/persianDateTime";
 
 import "./PublicSchedule.css";
 
@@ -44,6 +47,21 @@ const DAYS = [
     isHoliday: true,
   },
 ];
+
+
+const toLocalDateKey = (date) => {
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
 
 
 const TIME_SLOTS = Array.from(
@@ -142,6 +160,58 @@ function PublicSchedule({
   }, []);
 
 
+  const datedDays = useMemo(
+    () => {
+      const weekStart =
+        new Date(currentDateTime);
+
+      weekStart.setHours(
+        0,
+        0,
+        0,
+        0
+      );
+
+      const daysSinceSaturday =
+        (weekStart.getDay() + 1) % 7;
+
+      weekStart.setDate(
+        weekStart.getDate()
+        - daysSinceSaturday
+      );
+
+      const todayKey =
+        toLocalDateKey(
+          currentDateTime
+        );
+
+      return DAYS.map(
+        (day, index) => {
+          const date =
+            new Date(weekStart);
+
+          date.setDate(
+            weekStart.getDate()
+            + index
+          );
+
+          const dateKey =
+            toLocalDateKey(date);
+
+          return {
+            ...day,
+            date,
+            dateKey,
+            isToday:
+              dateKey === todayKey,
+          };
+        }
+      );
+    },
+    [currentDateTime]
+  );
+
+
   const slotStatuses = useMemo(
     () =>
       new Map(
@@ -205,16 +275,37 @@ function PublicSchedule({
                     ساعت
                   </th>
 
-                  {DAYS.map((day) => (
+                  {datedDays.map((day) => (
                     <th
                       key={day.value}
                       className={
-                        day.isHoliday
-                          ? "holiday-column"
-                          : ""
+                        [
+                          day.isHoliday
+                            ? "holiday-column"
+                            : "",
+                          day.isToday
+                            ? "today-column"
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")
                       }
                     >
-                      {day.label}
+                      <span className="public-schedule-day-name">
+                        {day.label}
+                      </span>
+
+                      <span className="public-schedule-day-date">
+                        {formatPersianDayMonth(
+                          day.date
+                        )}
+                      </span>
+
+                      {day.isToday && (
+                        <em>
+                          امروز
+                        </em>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -227,7 +318,7 @@ function PublicSchedule({
                       {time}
                     </th>
 
-                    {DAYS.map((day) => {
+                    {datedDays.map((day) => {
                       const slotStatus =
                         slotStatuses.get(
                           `${day.value}-${time}`
