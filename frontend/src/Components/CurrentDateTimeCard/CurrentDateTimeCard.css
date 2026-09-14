@@ -1,0 +1,69 @@
+.current-date-time-card {
+  min-width: 245px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  padding: 11px 15px;
+
+  color: #ffffff;
+  background: rgba(56, 189, 248, 0.055);
+
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 13px;
+
+  box-sizing: border-box;
+  direction: rtl;
+
+  font-family: "Vazirmatn", Tahoma, sans-serif;
+  font-synthesis: none;
+}
+
+.current-date-time-card *,
+.current-date-time-card *::before,
+.current-date-time-card *::after {
+  box-sizing: border-box;
+}
+
+.current-date-time-card > div {
+  min-width: 0;
+}
+
+.current-date-time-card strong {
+  display: block;
+
+  color: #e0f2fe;
+
+  font-family: "Vazirmatn", Tahoma, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.current-date-time-card time {
+  color: #38bdf8;
+
+  font-family: "Lalezar", sans-serif;
+  font-size: 21px;
+  font-weight: 400;
+
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .current-date-time-card {
+    width: min(100%, 360px);
+    min-width: 0;
+  }
+
+  .current-date-time-card strong {
+    font-size: 11px;
+  }
+
+  .current-date-time-card time {
+    font-size: 18px;
+  }
+}

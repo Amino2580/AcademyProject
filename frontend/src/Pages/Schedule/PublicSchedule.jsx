@@ -8,6 +8,7 @@ import {
 import {
   getPublicScheduleAvailability,
 } from "../../services/schedule";
+import CurrentDateTimeCard from "../../Components/CurrentDateTimeCard/CurrentDateTimeCard";
 
 import "./PublicSchedule.css";
 
@@ -64,37 +65,6 @@ const TIME_SLOTS = Array.from(
     return `${hour}:${minute}`;
   }
 );
-
-
-const PERSIAN_DATE_FORMATTER =
-  new Intl.DateTimeFormat(
-    "fa-IR-u-ca-persian",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }
-  );
-
-
-const PERSIAN_WEEKDAY_FORMATTER =
-  new Intl.DateTimeFormat(
-    "fa-IR-u-ca-persian",
-    {
-      weekday: "long",
-    }
-  );
-
-
-const PERSIAN_TIME_FORMATTER =
-  new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }
-  );
 
 
 function PublicSchedule({
@@ -201,28 +171,10 @@ function PublicSchedule({
           برنامه کلاس‌ها
         </h1>
 
-        <div className="public-schedule-date-card">
-          <div className="public-schedule-date-details">
-            <span>
-              امروز،{" "}
-              {PERSIAN_WEEKDAY_FORMATTER.format(
-                currentDateTime
-              )}
-            </span>
-
-            <strong>
-              {PERSIAN_DATE_FORMATTER.format(
-                currentDateTime
-              )}
-            </strong>
-          </div>
-
-          <time>
-            {PERSIAN_TIME_FORMATTER.format(
-              currentDateTime
-            )}
-          </time>
-        </div>
+        <CurrentDateTimeCard
+          value={currentDateTime}
+          className="public-schedule-date-card"
+        />
       </header>
 
 

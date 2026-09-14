@@ -19,9 +19,8 @@
   font-size: clamp(30px, 4vw, 48px);
 }
 
-.public-schedule-header h1 {
-  margin: 0;
-  font-size: clamp(30px, 4vw, 48px);
+.public-schedule-date-card {
+  flex: 0 0 auto;
 }
 
 .public-schedule-card {
@@ -144,64 +143,6 @@
   }
 
   .public-schedule-date-card {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .public-schedule-legend {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .public-schedule-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .public-schedule-legend {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .public-schedule-date-card {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    padding: 14px 18px;
-    border: 1px solid #29405f;
-    border-radius: 16px;
-    background:
-      linear-gradient(
-        135deg,
-       #12233c,
-       #101c31
-      );
-    box-shadow: 0 10px 30px rgb(0 0 0 / 15%);
-  }
-
-  .public-schedule-date-details {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .public-schedule-date-details span {
-    color: #8fa0b8;
-    font-size: 14px;
-  }
-
-  .public-schedule-date-details strong {
-    color: #ffffff;
-    font-size: 18px;
-  }
-
-  .public-schedule-date-card time {
-    min-width: 76px;
-    padding: 9px 12px;
-    border-radius: 11px;
-    color: #43c8f5;
-    direction: ltr;
-    font-size: 20px;
-    font-weight: 700;
-    text-align: center;
-    background: rgb(53 189 242 / 10%);
+    width: min(100%, 360px);
   }
 }

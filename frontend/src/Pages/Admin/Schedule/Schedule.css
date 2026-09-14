@@ -1041,59 +1041,7 @@
   }
 
   .schedule-current-date {
-    min-width: 245px;
-
     justify-self: end;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-
-    padding: 11px 15px;
-
-    background:
-      rgba(56, 189, 248, 0.055);
-
-    border: 1px solid
-      rgba(56, 189, 248, 0.2);
-
-    border-radius: 13px;
-  }
-
-  .schedule-current-date div {
-    min-width: 0;
-  }
-
-  .schedule-current-date span,
-  .schedule-current-date strong {
-    display: block;
-  }
-
-  .schedule-current-date span {
-    margin-bottom: 3px;
-
-    color: rgba(186, 230, 253, 0.55);
-
-    font-size: 10px;
-  }
-
-  .schedule-current-date strong {
-    color: #e0f2fe;
-
-    font-size: 12px;
-
-    white-space: nowrap;
-  }
-
-  .schedule-current-date time {
-    color: #38bdf8;
-
-    font-size: 21px;
-    font-family: "Lalezar", sans-serif;
-    font-weight: 400;
-
-    white-space: nowrap;
   }
 
   @media (max-width: 1000px) {
@@ -1127,15 +1075,6 @@
 
     .schedule-current-date {
       width: min(100%, 360px);
-      min-width: 0;
-    }
-
-    .schedule-current-date strong {
-      font-size: 11px;
-    }
-
-    .schedule-current-date time {
-      font-size: 18px;
     }
   }
 

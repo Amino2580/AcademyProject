@@ -12,6 +12,10 @@ import {
   updateScheduleBooking,
 } from "../../../services/schedule";
 import { useNavigate } from "react-router-dom";
+import CurrentDateTimeCard from "../../../Components/CurrentDateTimeCard/CurrentDateTimeCard";
+import {
+  formatPersianFullDate,
+} from "../../../utils/persianDateTime";
 import "./Schedule.css";
 import AvailabilityManager from "./AvailabilityManager";
 
@@ -91,29 +95,6 @@ for (let h = 7; h <= 19; h++) {
 
 const makeId = (day, time) =>
   `${day}|${time}`;
-
-
-const CURRENT_DATE_FORMATTER =
-  new Intl.DateTimeFormat(
-    "fa-IR-u-ca-persian",
-    {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }
-  );
-
-
-const CURRENT_TIME_FORMATTER =
-  new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    }
-  );
 
 
 const DAY_MONTH_FORMATTER =
@@ -197,29 +178,6 @@ const formatWeekRange = (weekDays) => {
   return `${formatDayMonth(
     firstDay
   )} تا ${formatDayMonth(lastDay)}`;
-};
-
-
-const formatCurrentDate = (date) => {
-  const dateParts =
-    CURRENT_DATE_FORMATTER.formatToParts(
-      date
-    );
-
-  const getPart = (type) =>
-    dateParts.find(
-      (part) => part.type === type
-    )?.value || "";
-
-  const weekday = getPart("weekday");
-
-  const dateText = [
-    getPart("day"),
-    getPart("month"),
-    getPart("year"),
-  ].join(" ");
-
-  return `${weekday}، ${dateText}`;
 };
 
 
@@ -688,7 +646,9 @@ useEffect(() => {
 
   const selectedDateLabel =
     selectedDate
-      ? formatCurrentDate(selectedDate)
+      ? formatPersianFullDate(
+          selectedDate
+        )
       : selectedDay;
 
   return (
@@ -723,21 +683,10 @@ useEffect(() => {
           </p>
         </div>
 
-        <div className="schedule-current-date">
-          <div>
-            <strong>
-              {formatCurrentDate(
-                currentDateTime
-              )}
-            </strong>
-          </div>
-
-          <time dir="ltr">
-            {CURRENT_TIME_FORMATTER.format(
-              currentDateTime
-            )}
-          </time>
-        </div>
+        <CurrentDateTimeCard
+          value={currentDateTime}
+          className="schedule-current-date"
+        />
 
       </header>
 
