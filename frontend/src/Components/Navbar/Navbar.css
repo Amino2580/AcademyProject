@@ -253,6 +253,67 @@
 
 
 /* =========================
+   ACCOUNT LOGOUT
+========================= */
+
+.navbar-desktop-logout {
+  min-width: 70px;
+  height: 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  margin-inline-start: 2px;
+  padding: 0 12px;
+
+  color: rgba(254, 202, 202, 0.9);
+  background: rgba(127, 29, 29, 0.08);
+
+  border: 1px solid rgba(251, 113, 133, 0.25);
+  border-radius: 999px;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.navbar-desktop-logout:hover {
+  color: #ffffff;
+  background: rgba(190, 24, 93, 0.13);
+  border-color: rgba(251, 113, 133, 0.48);
+  transform: translateY(-1px);
+}
+
+.navbar-desktop-logout:focus-visible,
+.navbar-mobile-logout:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.85);
+  outline-offset: 3px;
+}
+
+.navbar-desktop-logout:disabled,
+.navbar-mobile-logout:disabled {
+  opacity: 0.58;
+  cursor: wait;
+  transform: none;
+}
+
+.navbar-logout-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+
+/* =========================
    MOBILE
 ========================= */
 
@@ -290,6 +351,18 @@
   .navbar-logo img {
     width: 52px;
     height: 52px;
+  }
+
+  .navbar-desktop-logout {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    gap: 0;
+    padding: 0;
+  }
+
+  .navbar-desktop-logout-label {
+    display: none;
   }
 }
 
@@ -519,3 +592,47 @@
   }
 }
 
+
+
+@media (max-width: 650px) {
+  .navbar-mobile-logout {
+    width: min(190px, calc(100% - 20px));
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    margin: 12px auto 0;
+    padding: 10px 18px;
+
+    color: #fda4af;
+    background: rgba(127, 29, 29, 0.1);
+
+    border: 1px solid rgba(251, 113, 133, 0.28);
+    border-radius: 12px;
+
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+      color 180ms ease,
+      background 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .navbar-mobile-logout:active {
+    color: #ffffff;
+    background: rgba(190, 24, 93, 0.16);
+    border-color: rgba(251, 113, 133, 0.5);
+  }
+
+  .navbar-mobile-logout > span {
+    font-size: 16px;
+    line-height: 1;
+  }
+}

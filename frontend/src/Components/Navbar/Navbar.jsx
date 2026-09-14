@@ -2,11 +2,13 @@ import { useState } from "react";
 import {
   Link,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 
 import {
   getAuthUser,
   isAuthenticated,
+  logout,
 } from "../../services/auth";
 
 import mt from "../../assets/MT.jpg";
@@ -20,10 +22,16 @@ import "./Navbar.css";
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [
     isMobileMenuOpen,
     setIsMobileMenuOpen,
+  ] = useState(false);
+
+  const [
+    isLoggingOut,
+    setIsLoggingOut,
   ] = useState(false);
 
   const authUser = getAuthUser();
@@ -115,6 +123,27 @@ function Navbar() {
   ];
 
 
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    await logout();
+
+    setIsMobileMenuOpen(false);
+    setIsLoggingOut(false);
+
+    navigate(
+      "/",
+      {
+        replace: true,
+      }
+    );
+  };
+
+
   const getLinkClassName = (
     path
   ) => {
@@ -142,6 +171,29 @@ function Navbar() {
                 {item.title}
               </Link>
             )
+          )}
+
+          {authenticated && (
+            <button
+              type="button"
+              className="navbar-desktop-logout"
+              title="خروج از حساب"
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+            >
+              <span
+                className="navbar-logout-icon"
+                aria-hidden="true"
+              >
+                ↪
+              </span>
+
+              <span className="navbar-desktop-logout-label">
+                {isLoggingOut
+                  ? "..."
+                  : "خروج"}
+              </span>
+            </button>
           )}
         </div>
 
@@ -230,6 +282,23 @@ function Navbar() {
               )
             )}
           </div>
+
+          {authenticated && (
+            <button
+              type="button"
+              className="navbar-mobile-logout"
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+            >
+              <span aria-hidden="true">
+                ↪
+              </span>
+
+              {isLoggingOut
+                ? "در حال خروج..."
+                : "خروج از حساب"}
+            </button>
+          )}
 
           <div className="navbar-mobile-socials">
             <span className="navbar-mobile-socials-title">

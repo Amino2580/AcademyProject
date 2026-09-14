@@ -6,10 +6,6 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import {
-  logout,
-} from "../../services/auth";
-
-import {
   getMySchedule,
 } from "../../services/schedule";
 
@@ -81,18 +77,6 @@ function MySchedule() {
   }, [loadMySchedule]);
 
 
-  const handleLogout = async () => {
-    await logout();
-
-    navigate(
-      "/",
-      {
-        replace: true,
-      }
-    );
-  };
-
-
   return (
     <main
       className="my-schedule-page"
@@ -117,14 +101,6 @@ function MySchedule() {
             }
           >
             مشاهده برنامه عمومی
-          </button>
-
-          <button
-            type="button"
-            className="logout-button"
-            onClick={handleLogout}
-          >
-            خروج از حساب
           </button>
         </div>
       </header>

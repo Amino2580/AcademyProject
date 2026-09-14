@@ -75,18 +75,6 @@
   border-color: #38bdf8;
   background: rgb(56 189 248 / 14%);
 }
-
-.my-schedule-header-actions .logout-button {
-  color: #ff7a88;
-  border-color: rgb(255 100 116 / 34%);
-  background: rgb(130 37 49 / 12%);
-}
-
-.my-schedule-header-actions .logout-button:hover {
-  border-color: #ff6474;
-  background: rgb(130 37 49 / 20%);
-}
-
 .my-schedule-grid {
   display: grid;
   max-width: 1300px;
