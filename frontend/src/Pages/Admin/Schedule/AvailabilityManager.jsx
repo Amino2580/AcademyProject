@@ -151,7 +151,9 @@ function TimeSelect({
 }
 
 
-function AvailabilityManager() {
+function AvailabilityManager({
+  onAvailabilityChanged,
+}) {
   const dateOptions = useMemo(
     () => createDateOptions(),
     []
@@ -250,6 +252,11 @@ function AvailabilityManager() {
     try {
       await action();
       await refreshData();
+
+      if (onAvailabilityChanged) {
+        await onAvailabilityChanged();
+      }
+
       setSuccess(successMessage);
       return true;
     } catch (actionError) {

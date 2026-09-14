@@ -1,11 +1,13 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import {
   createScheduleBooking,
   deleteScheduleBooking,
+  getPublicScheduleAvailability,
   getScheduleBookings,
   updateScheduleBooking,
 } from "../../../services/schedule";
@@ -13,25 +15,69 @@ import { useNavigate } from "react-router-dom";
 import "./Schedule.css";
 import AvailabilityManager from "./AvailabilityManager";
 
-const DAYS = [
-  "شنبه",
-  "یکشنبه",
-  "دوشنبه",
-  "سه‌شنبه",
-  "چهارشنبه",
-  "پنجشنبه",
-  "جمعه",
+const DAY_ITEMS = [
+  {
+    value: "saturday",
+    label: "شنبه",
+    offset: 0,
+  },
+  {
+    value: "sunday",
+    label: "یکشنبه",
+    offset: 1,
+  },
+  {
+    value: "monday",
+    label: "دوشنبه",
+    offset: 2,
+  },
+  {
+    value: "tuesday",
+    label: "سه‌شنبه",
+    offset: 3,
+  },
+  {
+    value: "wednesday",
+    label: "چهارشنبه",
+    offset: 4,
+  },
+  {
+    value: "thursday",
+    label: "پنجشنبه",
+    offset: 5,
+  },
+  {
+    value: "friday",
+    label: "جمعه",
+    offset: 6,
+    isHoliday: true,
+  },
 ];
 
-const DAY_VALUES = {
-  "شنبه": "saturday",
-  "یکشنبه": "sunday",
-  "دوشنبه": "monday",
-  "سه‌شنبه": "tuesday",
-  "چهارشنبه": "wednesday",
-  "پنجشنبه": "thursday",
-  "جمعه": "friday",
-};
+
+const DAYS = DAY_ITEMS.map(
+  (day) => day.label
+);
+
+
+const DAY_VALUES = Object.fromEntries(
+  DAY_ITEMS.map(
+    (day) => [
+      day.label,
+      day.value,
+    ]
+  )
+);
+
+
+const DAY_LABELS = Object.fromEntries(
+  DAY_ITEMS.map(
+    (day) => [
+      day.value,
+      day.label,
+    ]
+  )
+);
 
 const TIMES = [];
 
@@ -68,6 +114,90 @@ const CURRENT_TIME_FORMATTER =
       hourCycle: "h23",
     }
   );
+
+
+const DAY_MONTH_FORMATTER =
+  new Intl.DateTimeFormat(
+    "fa-IR-u-ca-persian",
+    {
+      day: "numeric",
+      month: "long",
+    }
+  );
+
+
+const toLocalIsoDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+
+const addDays = (date, days) => {
+  const result = new Date(date);
+
+  result.setDate(
+    result.getDate() + days
+  );
+  result.setHours(12, 0, 0, 0);
+
+  return result;
+};
+
+
+const getSaturdayStart = (date) => {
+  const result = new Date(date);
+  const daysSinceSaturday = (
+    result.getDay() + 1
+  ) % 7;
+
+  result.setDate(
+    result.getDate()
+    - daysSinceSaturday
+  );
+  result.setHours(12, 0, 0, 0);
+
+  return result;
+};
+
+
+const createWeekDays = (weekStart) =>
+  DAY_ITEMS.map((day) => {
+    const date = addDays(
+      weekStart,
+      day.offset
+    );
+
+    return {
+      ...day,
+      date,
+      isoDate: toLocalIsoDate(date),
+    };
+  });
+
+
+const formatDayMonth = (date) =>
+  DAY_MONTH_FORMATTER.format(date);
+
+
+const formatWeekRange = (weekDays) => {
+  const firstDay = weekDays[0]?.date;
+  const lastDay = weekDays.at(-1)?.date;
+
+  if (!firstDay || !lastDay) {
+    return "";
+  }
+
+  return `${formatDayMonth(
+    firstDay
+  )} تا ${formatDayMonth(lastDay)}`;
+};
 
 
 const formatCurrentDate = (date) => {
@@ -124,6 +254,64 @@ function Schedule() {
 
   const [saving, setSaving] =
     useState(false);
+
+  const [
+    selectedWeekIndex,
+    setSelectedWeekIndex,
+  ] = useState(0);
+
+  const [
+    unavailableSlotIds,
+    setUnavailableSlotIds,
+  ] = useState(() => new Set());
+
+  const [
+    availabilityLoading,
+    setAvailabilityLoading,
+  ] = useState(false);
+
+  const todayIsoDate =
+    toLocalIsoDate(currentDateTime);
+
+  const weekOptions = useMemo(
+    () => {
+      const currentWeekStart =
+        getSaturdayStart(
+          currentDateTime
+        );
+
+      return [
+        {
+          index: 0,
+          title: "این هفته",
+          days: createWeekDays(
+            currentWeekStart
+          ),
+        },
+        {
+          index: 1,
+          title: "هفته آینده",
+          days: createWeekDays(
+            addDays(
+              currentWeekStart,
+              7
+            )
+          ),
+        },
+      ];
+    },
+    [currentDateTime]
+  );
+
+  const selectedWeek =
+    weekOptions[selectedWeekIndex];
+
+  const weekDays =
+    selectedWeek?.days || [];
+
+  const weekStartIso =
+    weekDays[0]?.isoDate || "";
+
   /* ================= LOAD API ================= */
 
   const loadBookings = useCallback(
@@ -176,6 +364,49 @@ function Schedule() {
 );
 
 
+const loadWeekAvailability = useCallback(
+  async () => {
+    if (!weekStartIso) return;
+
+    setAvailabilityLoading(true);
+    setUnavailableSlotIds(new Set());
+
+    try {
+      const data =
+        await getPublicScheduleAvailability(
+          weekStartIso
+        );
+
+      const unavailableItems =
+        Array.isArray(data)
+          ? data
+          : [];
+
+      setUnavailableSlotIds(
+        new Set(
+          unavailableItems.map(
+            (item) =>
+              makeId(
+                DAY_LABELS[item.day]
+                  || item.dayLabel,
+                item.startTime
+              )
+          )
+        )
+      );
+    } catch (loadError) {
+      setError(
+        loadError.message ||
+        "دریافت وضعیت زمان‌های قابل رزرو انجام نشد."
+      );
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  },
+  [weekStartIso]
+);
+
+
 useEffect(() => {
   const timeoutId = window.setTimeout(() => {
     loadBookings();
@@ -185,6 +416,20 @@ useEffect(() => {
     window.clearTimeout(timeoutId);
   };
 }, [loadBookings]);
+
+
+useEffect(() => {
+  const timeoutId = window.setTimeout(
+    () => {
+      loadWeekAvailability();
+    },
+    0
+  );
+
+  return () => {
+    window.clearTimeout(timeoutId);
+  };
+}, [loadWeekAvailability]);
 
 
 useEffect(() => {
@@ -253,7 +498,10 @@ useEffect(() => {
       });
     }
 
-    await loadBookings();
+    await Promise.all([
+      loadBookings(),
+      loadWeekAvailability(),
+    ]);
     setModal(null);
   } catch (submitError) {
     setError(
@@ -300,7 +548,10 @@ useEffect(() => {
       selectedBooking.id
     );
 
-    await loadBookings();
+    await Promise.all([
+      loadBookings(),
+      loadWeekAvailability(),
+    ]);
     setModal(null);
   } catch (deleteError) {
     setError(
@@ -314,10 +565,13 @@ useEffect(() => {
 
   /* ================= FILTER ================= */
 
-  const filteredDays =
+  const filteredWeekDays =
     dayFilter === "all"
-      ? DAYS
-      : DAYS.filter((day) => day === dayFilter);
+      ? weekDays
+      : weekDays.filter(
+          (day) =>
+            day.label === dayFilter
+        );
 
   const matchesSearch = (booking) => {
     if (!search.trim()) return true;
@@ -332,29 +586,60 @@ useEffect(() => {
     return text.includes(search.toLowerCase());
   };
 
+  const isSlotUnavailable = (
+    day,
+    time,
+  ) => {
+    const id = makeId(day, time);
+
+    return (
+      !bookings[id]
+      && unavailableSlotIds.has(id)
+    );
+  };
+
+
   const isVisible = (day, time) => {
     const id = makeId(day, time);
     const booking = bookings[id];
+    const isUnavailable =
+      isSlotUnavailable(day, time);
 
     if (
-      statusFilter === "booked" &&
-      !booking
+      statusFilter === "booked"
+      && !booking
     ) {
       return false;
     }
 
     if (
-      statusFilter === "free" &&
+      statusFilter === "free"
+      && (
+        booking
+        || isUnavailable
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      statusFilter === "closed"
+      && !isUnavailable
+    ) {
+      return false;
+    }
+
+    if (
       booking
+      && !matchesSearch(booking)
     ) {
       return false;
     }
 
-    if (booking && !matchesSearch(booking)) {
-      return false;
-    }
-
-    if (!booking && search.trim()) {
+    if (
+      !booking
+      && search.trim()
+    ) {
       return false;
     }
 
@@ -363,11 +648,24 @@ useEffect(() => {
 
   /* ================= STATS ================= */
 
-  const totalSlots = DAYS.length * TIMES.length;
+  const totalSlots =
+    DAYS.length * TIMES.length;
 
-  const bookedSlots = Object.keys(bookings).length;
+  const bookedSlots =
+    Object.keys(bookings).length;
 
-  const freeSlots = totalSlots - bookedSlots;
+  const closedSlots = Array.from(
+    unavailableSlotIds
+  ).filter(
+    (slotId) => !bookings[slotId]
+  ).length;
+
+  const freeSlots = Math.max(
+    0,
+    totalSlots
+    - bookedSlots
+    - closedSlots
+  );
 
   /* ================= SELECTED BOOKING ================= */
 
@@ -381,6 +679,17 @@ useEffect(() => {
 
   const selectedTime =
     selectedId?.split("|")[1];
+
+  const selectedDate =
+    weekDays.find(
+      (day) =>
+        day.label === selectedDay
+    )?.date;
+
+  const selectedDateLabel =
+    selectedDate
+      ? formatCurrentDate(selectedDate)
+      : selectedDay;
 
   return (
     <div className="schedule-page">
@@ -443,7 +752,71 @@ useEffect(() => {
           {error}
         </div>
       )}
-      <AvailabilityManager />
+      <AvailabilityManager
+        onAvailabilityChanged={
+          loadWeekAvailability
+        }
+      />
+
+      <section
+        className="schedule-week-navigation"
+        aria-label="انتخاب هفته برنامه"
+      >
+        <div className="schedule-week-copy">
+          <span>نمای دو هفته آینده</span>
+          <strong>
+            {formatWeekRange(weekDays)}
+          </strong>
+        </div>
+
+        <div
+          className="schedule-week-switcher"
+          role="group"
+          aria-label="هفته برنامه"
+        >
+          {weekOptions.map((week) => (
+            <button
+              type="button"
+              key={week.index}
+              className={
+                selectedWeekIndex
+                  === week.index
+                  ? "active"
+                  : ""
+              }
+              aria-pressed={
+                selectedWeekIndex
+                === week.index
+              }
+              onClick={() => {
+                setSelectedWeekIndex(
+                  week.index
+                );
+                setSelectedId(null);
+                setModal(null);
+              }}
+            >
+              <span>{week.title}</span>
+              <small>
+                {formatWeekRange(
+                  week.days
+                )}
+              </small>
+            </button>
+          ))}
+        </div>
+
+        <div
+          className={
+            availabilityLoading
+              ? "week-loading visible"
+              : "week-loading"
+          }
+          aria-live="polite"
+        >
+          در حال به‌روزرسانی…
+        </div>
+      </section>
 
       {/* ================= TOOLBAR ================= */}
 
@@ -495,6 +868,10 @@ useEffect(() => {
               <option value="booked">
                 رزرو شده
               </option>
+
+              <option value="closed">
+                بسته
+              </option>
             </select>
           </div>
 
@@ -532,6 +909,11 @@ useEffect(() => {
             <span>رزرو شده</span>
           </div>
 
+          <div className="stat-box closed-stat">
+            <strong>{closedSlots}</strong>
+            <span>بسته</span>
+          </div>
+
         </div>
 
       </section>
@@ -548,6 +930,11 @@ useEffect(() => {
         <span>
           <i className="legend-dot booked-dot"></i>
           رزرو شده
+        </span>
+
+        <span>
+          <i className="legend-dot closed-dot"></i>
+          خارج از زمان تدریس
         </span>
 
       </div>
@@ -567,20 +954,31 @@ useEffect(() => {
                   ساعت
                 </th>
 
-                {DAYS.map((day) => (
+                {weekDays.map((day) => (
                   <th
-                    key={day}
+                    key={day.isoDate}
                     className={[
-                      day === "جمعه"
+                      day.isHoliday
                         ? "holiday-column"
                         : "",
-                      dayFilter !== "all" &&
-                      day !== dayFilter
+                      day.isoDate === todayIsoDate
+                        ? "today-column"
+                        : "",
+                      dayFilter !== "all"
+                      && day.label !== dayFilter
                         ? "muted-column"
                         : "",
                     ].filter(Boolean).join(" ")}
                   >
-                    {day}
+                    <span className="schedule-day-name">
+                      {day.label}
+                    </span>
+                    <small className="schedule-day-date">
+                      {formatDayMonth(day.date)}
+                    </small>
+                    {day.isoDate === todayIsoDate && (
+                      <em>امروز</em>
+                    )}
                   </th>
                 ))}
 
@@ -597,16 +995,25 @@ useEffect(() => {
                     {time}
                   </th>
 
-                  {DAYS.map((day) => {
+                  {weekDays.map((day) => {
 
                     const id =
-                      makeId(day, time);
+                      makeId(day.label, time);
 
                     const booking =
                       bookings[id];
 
+                    const unavailable =
+                      isSlotUnavailable(
+                        day.label,
+                        time
+                      );
+
                     const visible =
-                      isVisible(day, time);
+                      isVisible(
+                        day.label,
+                        time
+                      );
 
                     return (
                       <td
@@ -615,7 +1022,9 @@ useEffect(() => {
                           schedule-slot
                           ${booking
                             ? "booked"
-                            : "free"}
+                            : unavailable
+                              ? "unavailable"
+                              : "free"}
                           ${!visible
                             ? "filtered"
                             : ""}
@@ -623,7 +1032,17 @@ useEffect(() => {
                       >
 
                         {visible ? (
-
+                          unavailable ? (
+                            <div
+                              className="slot-button unavailable-slot"
+                              aria-label={
+                                `${day.label} ${time} بسته است`
+                              }
+                            >
+                              <span>—</span>
+                              <small>بسته</small>
+                            </div>
+                          ) : (
                           <button
                             className="slot-button"
                             onClick={() =>
@@ -657,7 +1076,7 @@ useEffect(() => {
                             )}
 
                           </button>
-
+                          )
                         ) : (
                           <span className="hidden-slot">
                             —
@@ -684,11 +1103,11 @@ useEffect(() => {
 
       <section className="mobile-schedule">
 
-        {filteredDays.map((day) => {
+        {filteredWeekDays.map((day) => {
 
           const daySlots = TIMES.filter(
             (time) =>
-              isVisible(day, time)
+              isVisible(day.label, time)
           );
 
           if (!daySlots.length) {
@@ -697,36 +1116,53 @@ useEffect(() => {
 
           return (
             <div
-              className="mobile-day"
-              key={day}
+              className={`mobile-day ${
+                day.isHoliday ? "holiday" : ""
+              }`}
+              key={day.isoDate}
             >
-
-              <h2>{day}</h2>
+              <div className="mobile-day-heading">
+                <h2>{day.label}</h2>
+                <span>
+                  {formatDayMonth(day.date)}
+                </span>
+              </div>
 
               {daySlots.map((time) => {
 
                 const id =
-                  makeId(day, time);
+                  makeId(day.label, time);
 
                 const booking =
                   bookings[id];
 
+                const unavailable =
+                  isSlotUnavailable(
+                    day.label,
+                    time
+                  );
+
                 return (
                   <button
+                    type="button"
                     className={`
                       mobile-slot
                       ${booking
                         ? "booked"
-                        : "free"}
+                        : unavailable
+                          ? "unavailable"
+                          : "free"}
                     `}
                     key={id}
-                    onClick={() =>
+                    disabled={unavailable}
+                    onClick={() => {
+                      if (unavailable) return;
+
                       booking
                         ? showDetails(id)
-                        : openBooking(id)
-                    }
+                        : openBooking(id);
+                    }}
                   >
-
                     <span>
                       {time}
                     </span>
@@ -734,9 +1170,10 @@ useEffect(() => {
                     <strong>
                       {booking
                         ? booking.name
-                        : "آزاد"}
+                        : unavailable
+                          ? "بسته"
+                          : "آزاد"}
                     </strong>
-
                   </button>
                 );
 
@@ -778,7 +1215,7 @@ useEffect(() => {
             </h2>
 
             <p className="modal-slot">
-              {selectedDay} — {selectedTime}
+              {selectedDateLabel} — {selectedTime}
             </p>
 
             <form
@@ -940,7 +1377,7 @@ useEffect(() => {
                   </span>
 
                   <strong>
-                    {selectedDay} — {selectedTime}
+                    {selectedDateLabel} — {selectedTime}
                   </strong>
                 </div>
 
