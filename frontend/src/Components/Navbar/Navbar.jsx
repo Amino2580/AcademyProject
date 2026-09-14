@@ -10,6 +10,10 @@ import {
 } from "../../services/auth";
 
 import mt from "../../assets/MT.jpg";
+import insta from "../../assets/insta.png";
+import youtube from "../../assets/youtube.svg";
+import telegram from "../../assets/telegram.png";
+import phone from "../../assets/phone.svg";
 
 import "./Navbar.css";
 
@@ -80,6 +84,34 @@ function Navbar() {
   const mobileMenuItems = [
     ...rightMenuItems,
     ...leftMenuItems,
+  ];
+
+
+  const mobileSocialItems = [
+    {
+      title: "اینستاگرام",
+      href: "https://milad.tarighat",
+      icon: insta,
+      external: true,
+    },
+    {
+      title: "یوتیوب",
+      href: "https://youtube.com/",
+      icon: youtube,
+      external: true,
+    },
+    {
+      title: "تلگرام",
+      href: "https://telegram.me/milad_tarighat",
+      icon: telegram,
+      external: true,
+    },
+    {
+      title: "تماس",
+      href: "tel:+989383894114",
+      icon: phone,
+      external: false,
+    },
   ];
 
 
@@ -178,24 +210,62 @@ function Navbar() {
             }`
           }
         >
-          {mobileMenuItems.map(
-            (item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={
-                  getLinkClassName(
-                    item.path
-                  )
-                }
-                onClick={() =>
-                  setIsMobileMenuOpen(false)
-                }
-              >
-                {item.title}
-              </Link>
-            )
-          )}
+          <div className="navbar-mobile-links">
+            {mobileMenuItems.map(
+              (item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={
+                    getLinkClassName(
+                      item.path
+                    )
+                  }
+                  onClick={() =>
+                    setIsMobileMenuOpen(false)
+                  }
+                >
+                  {item.title}
+                </Link>
+              )
+            )}
+          </div>
+
+          <div className="navbar-mobile-socials">
+            <span className="navbar-mobile-socials-title">
+              ارتباط با استاد
+            </span>
+
+            <div>
+              {mobileSocialItems.map(
+                (item) => (
+                  <a
+                    key={item.title}
+                    href={item.href}
+                    target={
+                      item.external
+                        ? "_blank"
+                        : undefined
+                    }
+                    rel={
+                      item.external
+                        ? "noreferrer"
+                        : undefined
+                    }
+                    onClick={() =>
+                      setIsMobileMenuOpen(false)
+                    }
+                  >
+                    <img
+                      src={item.icon}
+                      alt=""
+                    />
+                    <span>{item.title}</span>
+                  </a>
+                )
+              )}
+            </div>
+          </div>
         </div>
       </nav>
     </header>

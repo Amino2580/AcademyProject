@@ -50,3 +50,9 @@
   width: 45px;
   height: 45px;
 }
+
+@media (max-width: 650px) {
+  .social-links {
+    display: none;
+  }
+}
