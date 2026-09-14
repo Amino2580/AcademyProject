@@ -54,7 +54,10 @@
 .login-header h1 {
   margin: 30px 0 10px;
 
+  color: #f8fafc;
   font-size: 22px;
+  font-weight: 600;
+  line-height: 1.65;
 }
 
 .login-header p {
