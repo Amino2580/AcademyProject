@@ -16,6 +16,7 @@ WEEKDAY_MAP = {
     1: ClassBooking.Weekday.TUESDAY,
     2: ClassBooking.Weekday.WEDNESDAY,
     3: ClassBooking.Weekday.THURSDAY,
+    4: ClassBooking.Weekday.FRIDAY,
     5: ClassBooking.Weekday.SATURDAY,
     6: ClassBooking.Weekday.SUNDAY,
 }

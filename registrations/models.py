@@ -15,6 +15,7 @@ class RegistrationRequest(models.Model):
         TUESDAY = "tuesday", "سه‌شنبه"
         WEDNESDAY = "wednesday", "چهارشنبه"
         THURSDAY = "thursday", "پنجشنبه"
+        FRIDAY = "friday", "جمعه"
 
     full_name = models.CharField(
         max_length=150,

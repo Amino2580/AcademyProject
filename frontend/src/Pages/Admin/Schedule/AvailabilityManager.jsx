@@ -25,6 +25,7 @@ const DAYS = [
   { value: "tuesday", label: "سه‌شنبه" },
   { value: "wednesday", label: "چهارشنبه" },
   { value: "thursday", label: "پنجشنبه" },
+  { value: "friday", label: "جمعه", isHoliday: true },
 ];
 
 
@@ -527,7 +528,7 @@ function AvailabilityManager() {
               <article
                 className={`weekly-day-card ${
                   isActive ? "enabled" : "disabled"
-                }`}
+                } ${day.isHoliday ? "holiday" : ""}`}
                 key={day.value}
               >
                 <div className="weekly-day-head">

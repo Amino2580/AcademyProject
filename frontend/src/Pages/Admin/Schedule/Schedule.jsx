@@ -20,6 +20,7 @@ const DAYS = [
   "سه‌شنبه",
   "چهارشنبه",
   "پنجشنبه",
+  "جمعه",
 ];
 
 const DAY_VALUES = {
@@ -29,6 +30,7 @@ const DAY_VALUES = {
   "سه‌شنبه": "tuesday",
   "چهارشنبه": "wednesday",
   "پنجشنبه": "thursday",
+  "جمعه": "friday",
 };
 
 const TIMES = [];
@@ -568,12 +570,15 @@ useEffect(() => {
                 {DAYS.map((day) => (
                   <th
                     key={day}
-                    className={
+                    className={[
+                      day === "جمعه"
+                        ? "holiday-column"
+                        : "",
                       dayFilter !== "all" &&
                       day !== dayFilter
                         ? "muted-column"
-                        : ""
-                    }
+                        : "",
+                    ].filter(Boolean).join(" ")}
                   >
                     {day}
                   </th>

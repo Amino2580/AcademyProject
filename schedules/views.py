@@ -50,6 +50,7 @@ WEEKDAY_NUMBERS = {
     ClassBooking.Weekday.TUESDAY: 1,
     ClassBooking.Weekday.WEDNESDAY: 2,
     ClassBooking.Weekday.THURSDAY: 3,
+    ClassBooking.Weekday.FRIDAY: 4,
     ClassBooking.Weekday.SATURDAY: 5,
     ClassBooking.Weekday.SUNDAY: 6,
 }

@@ -12,6 +12,7 @@ class ClassBooking(models.Model):
         TUESDAY = "tuesday", "سه‌شنبه"
         WEDNESDAY = "wednesday", "چهارشنبه"
         THURSDAY = "thursday", "پنجشنبه"
+        FRIDAY = "friday", "جمعه"
 
     day = models.CharField(
         max_length=10,

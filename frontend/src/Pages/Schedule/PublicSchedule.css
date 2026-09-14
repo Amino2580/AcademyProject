@@ -49,6 +49,12 @@
   font-weight: 700;
 }
 
+
+.public-schedule-table th.holiday-column {
+  color: #fda4af;
+  background: rgba(127, 29, 29, 0.12);
+}
+
 .public-schedule-table td {
   min-width: 135px;
 }

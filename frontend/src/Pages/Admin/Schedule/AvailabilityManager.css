@@ -168,11 +168,12 @@
 
 .weekly-days-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 14px;
 }
 
 .weekly-day-card {
+  grid-column: span 2;
   min-width: 0;
   padding: 17px;
   background: rgba(2, 8, 23, 0.2);
@@ -187,6 +188,18 @@
 
 .weekly-day-card.disabled {
   background: rgba(2, 8, 23, 0.13);
+}
+
+.weekly-day-card:nth-child(5) {
+  grid-column: 2 / span 2;
+}
+
+.weekly-day-card.holiday {
+  border-color: rgba(251, 113, 133, 0.2);
+}
+
+.weekly-day-card.holiday .weekly-day-head strong {
+  color: #fda4af;
 }
 
 .weekly-day-head {
@@ -573,6 +586,11 @@
 @media (max-width: 1120px) {
   .weekly-days-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .weekly-day-card,
+  .weekly-day-card:nth-child(5) {
+    grid-column: auto;
   }
 }
 

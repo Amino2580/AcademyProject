@@ -354,6 +354,12 @@
   font-size: 14px;
 }
 
+
+.schedule-table thead th.holiday-column {
+  color: #fda4af;
+  background: rgba(127, 29, 29, 0.14);
+}
+
 .schedule-table .time-header {
   width: 80px;
 }

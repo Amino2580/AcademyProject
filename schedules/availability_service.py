@@ -21,6 +21,7 @@ DAY_SEQUENCE = (
     ClassBooking.Weekday.TUESDAY,
     ClassBooking.Weekday.WEDNESDAY,
     ClassBooking.Weekday.THURSDAY,
+    ClassBooking.Weekday.FRIDAY,
 )
 
 DAY_LABELS = dict(
@@ -41,6 +42,7 @@ DAY_BY_PYTHON_WEEKDAY = {
     1: ClassBooking.Weekday.TUESDAY,
     2: ClassBooking.Weekday.WEDNESDAY,
     3: ClassBooking.Weekday.THURSDAY,
+    4: ClassBooking.Weekday.FRIDAY,
 }
 
 
@@ -147,7 +149,7 @@ def get_public_unavailable_slots(
 
     week_end = (
         week_start
-        + timedelta(days=5)
+        + timedelta(days=6)
     )
 
     exceptions_by_date = defaultdict(

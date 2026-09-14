@@ -37,6 +37,11 @@ const DAYS = [
     value: "thursday",
     label: "پنجشنبه",
   },
+  {
+    value: "friday",
+    label: "جمعه",
+    isHoliday: true,
+  },
 ];
 
 
@@ -247,7 +252,14 @@ function PublicSchedule({
                   </th>
 
                   {DAYS.map((day) => (
-                    <th key={day.value}>
+                    <th
+                      key={day.value}
+                      className={
+                        day.isHoliday
+                          ? "holiday-column"
+                          : ""
+                      }
+                    >
                       {day.label}
                     </th>
                   ))}
