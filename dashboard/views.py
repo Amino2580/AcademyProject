@@ -28,18 +28,46 @@ class AdminDashboardView(APIView):
         responses=DashboardSerializer,
     )
     def get(self, request):
+        today = timezone.localdate()
+
+        current_time = (
+            timezone.localtime()
+            .time()
+            .replace(
+                second=0,
+                microsecond=0,
+                tzinfo=None,
+            )
+        )
+
         today_value = WEEKDAY_MAP.get(
-            timezone.localdate().weekday()
+            today.weekday()
         )
 
         if today_value is None:
-            today_classes = 0
+            today_schedule = (
+                ClassBooking.objects.none()
+            )
         else:
-            today_classes = (
+            today_schedule = (
                 ClassBooking.objects.filter(
                     day=today_value
-                ).count()
+                ).order_by(
+                    "start_time",
+                    "id",
+                )
             )
+
+        next_class_id = (
+            today_schedule.filter(
+                start_time__gte=current_time
+            )
+            .values_list(
+                "id",
+                flat=True,
+            )
+            .first()
+        )
 
         recent_registrations = (
             RegistrationRequest.objects.order_by(
@@ -58,17 +86,26 @@ class AdminDashboardView(APIView):
             ),
             "newRegistrations": (
                 RegistrationRequest.objects.filter(
-                    status=RegistrationRequest.Status.NEW
+                    status=(
+                        RegistrationRequest.Status.NEW
+                    )
                 ).count()
             ),
-            "todayClasses": today_classes,
+            "todayClasses": (
+                today_schedule.count()
+            ),
+            "todaySchedule": today_schedule,
             "recentRegistrations": (
                 recent_registrations
             ),
         }
 
         serializer = DashboardSerializer(
-            dashboard_data
+            dashboard_data,
+            context={
+                "current_time": current_time,
+                "next_class_id": next_class_id,
+            },
         )
 
         return Response(serializer.data)

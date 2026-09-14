@@ -19,6 +19,10 @@ from .models import (
     WeeklyAvailability,
 )
 
+from .availability_service import (
+    get_week_start,
+)
+
 
 class WeeklyAvailabilityAPITests(
     APITestCase
@@ -323,4 +327,137 @@ class AvailabilityExceptionAPITests(
         self.assertEqual(
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
+        )
+
+class PublicAvailabilityRulesAPITests(
+    APITestCase
+):
+    def setUp(self):
+        self.url = reverse(
+            "schedule:availability"
+        )
+
+        self.week_start = (
+            get_week_start()
+            + timedelta(days=7)
+        )
+
+    def get_unavailable_slots(self):
+        response = self.client.get(
+            self.url,
+            {
+                "weekStart": (
+                    self.week_start.isoformat()
+                )
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        return {
+            (
+                item["day"],
+                item["startTime"],
+            )
+            for item in response.data
+        }
+
+    def test_time_outside_weekly_hours_is_unavailable(
+        self,
+    ):
+        WeeklyAvailability.objects.filter(
+            day=(
+                ClassBooking
+                .Weekday
+                .MONDAY
+            )
+        ).update(
+            start_time=time(12, 0),
+            end_time=time(19, 30),
+        )
+
+        unavailable_slots = (
+            self.get_unavailable_slots()
+        )
+
+        self.assertIn(
+            (
+                ClassBooking
+                .Weekday
+                .MONDAY,
+                "08:00",
+            ),
+            unavailable_slots,
+        )
+
+        self.assertIn(
+            (
+                ClassBooking
+                .Weekday
+                .MONDAY,
+                "11:30",
+            ),
+            unavailable_slots,
+        )
+
+        self.assertNotIn(
+            (
+                ClassBooking
+                .Weekday
+                .MONDAY,
+                "12:00",
+            ),
+            unavailable_slots,
+        )
+
+    def test_date_exception_is_unavailable(
+        self,
+    ):
+        monday_date = (
+            self.week_start
+            + timedelta(days=2)
+        )
+
+        AvailabilityException.objects.create(
+            date=monday_date,
+            start_time=time(8, 0),
+            end_time=time(12, 0),
+            reason="عدم حضور صبح",
+        )
+
+        unavailable_slots = (
+            self.get_unavailable_slots()
+        )
+
+        self.assertIn(
+            (
+                ClassBooking
+                .Weekday
+                .MONDAY,
+                "08:00",
+            ),
+            unavailable_slots,
+        )
+
+        self.assertIn(
+            (
+                ClassBooking
+                .Weekday
+                .MONDAY,
+                "11:30",
+            ),
+            unavailable_slots,
+        )
+
+        self.assertNotIn(
+            (
+                ClassBooking
+                .Weekday
+                .MONDAY,
+                "12:00",
+            ),
+            unavailable_slots,
         )

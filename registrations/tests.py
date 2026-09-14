@@ -1,24 +1,34 @@
+from datetime import time, timedelta
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from datetime import time
-
-from schedules.models import ClassBooking
-
+from schedules.availability_service import (
+    get_week_start,
+)
+from schedules.models import (
+    AvailabilityException,
+    ClassBooking,
+)
 from students.models import Student
 
 from .models import RegistrationRequest
 
 
-class RegistrationRequestCreateAPITests(APITestCase):
+class RegistrationRequestCreateAPITests(
+    APITestCase
+):
     def setUp(self):
         self.url = reverse(
-            "registrations:registration-request-create"
+            "registrations:"
+            "registration-request-create"
         )
 
-    def test_create_registration_request(self):
+    def test_create_registration_request(
+        self,
+    ):
         payload = {
             "fullName": "Test User",
             "phone": "09123456789",
@@ -39,23 +49,29 @@ class RegistrationRequestCreateAPITests(APITestCase):
             response.status_code,
             status.HTTP_201_CREATED,
         )
+
         self.assertEqual(
             RegistrationRequest.objects.count(),
             1,
         )
 
-        registration = RegistrationRequest.objects.first()
+        registration = (
+            RegistrationRequest.objects.first()
+        )
 
         self.assertEqual(
             registration.full_name,
             payload["fullName"],
         )
+
         self.assertEqual(
             registration.phone,
             payload["phone"],
         )
 
-    def test_reject_invalid_phone(self):
+    def test_reject_invalid_phone(
+        self,
+    ):
         payload = {
             "fullName": "Test User",
             "phone": "123",
@@ -76,16 +92,18 @@ class RegistrationRequestCreateAPITests(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+
         self.assertEqual(
             RegistrationRequest.objects.count(),
             0,
         )
+
     def test_create_registration_with_preferred_slot(
-        self
+        self,
     ):
         response = self.client.post(
             self.url,
-             {
+            {
                 "fullName": "Schedule User",
                 "phone": "09121111111",
                 "preferredDay": "saturday",
@@ -124,7 +142,7 @@ class RegistrationRequestCreateAPITests(APITestCase):
         )
 
     def test_reject_incomplete_preferred_slot(
-        self
+        self,
     ):
         response = self.client.post(
             self.url,
@@ -147,7 +165,7 @@ class RegistrationRequestCreateAPITests(APITestCase):
         )
 
     def test_reject_preferred_slot_when_booked(
-        self
+        self,
     ):
         ClassBooking.objects.create(
             day=ClassBooking.Weekday.MONDAY,
@@ -179,29 +197,37 @@ class RegistrationRequestCreateAPITests(APITestCase):
         )
 
 
-class RegistrationRequestAdminAPITests(APITestCase):
+class RegistrationRequestAdminAPITests(
+    APITestCase
+):
     def setUp(self):
         user_model = get_user_model()
 
-        self.regular_user = user_model.objects.create_user(
-            username="regular-user",
-            password="test-password-123",
+        self.regular_user = (
+            user_model.objects.create_user(
+                username="regular-user",
+                password="test-password-123",
+            )
         )
 
-        self.admin_user = user_model.objects.create_superuser(
-            username="admin-user",
-            password="test-password-123",
-            email="admin@example.com",
+        self.admin_user = (
+            user_model.objects.create_superuser(
+                username="admin-user",
+                password="test-password-123",
+                email="admin@example.com",
+            )
         )
 
-        self.registration = RegistrationRequest.objects.create(
-            full_name="Test Student",
-            phone="09123456789",
-            age=25,
-            level="beginner",
-            instrument="piano",
-            class_type="private",
-            message="Test request",
+        self.registration = (
+            RegistrationRequest.objects.create(
+                full_name="Test Student",
+                phone="09123456789",
+                age=25,
+                level="beginner",
+                instrument="piano",
+                class_type="private",
+                message="Test request",
+            )
         )
 
         self.list_url = reverse(
@@ -210,46 +236,68 @@ class RegistrationRequestAdminAPITests(APITestCase):
 
         self.detail_url = reverse(
             "registration_admin:detail",
-            kwargs={"pk": self.registration.pk},
+            kwargs={
+                "pk": self.registration.pk,
+            },
         )
 
-    def test_anonymous_user_cannot_access_admin_list(self):
-        response = self.client.get(self.list_url)
+    def test_anonymous_user_cannot_access_admin_list(
+        self,
+    ):
+        response = self.client.get(
+            self.list_url
+        )
 
         self.assertEqual(
             response.status_code,
             status.HTTP_401_UNAUTHORIZED,
         )
 
-    def test_regular_user_cannot_access_admin_list(self):
+    def test_regular_user_cannot_access_admin_list(
+        self,
+    ):
         self.client.force_authenticate(
             user=self.regular_user
         )
 
-        response = self.client.get(self.list_url)
+        response = self.client.get(
+            self.list_url
+        )
+
         self.assertEqual(
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
-        
-    def test_admin_can_access_paginated_list(self):
+
+    def test_admin_can_access_paginated_list(
+        self,
+    ):
         self.client.force_authenticate(
             user=self.admin_user
         )
 
-        response = self.client.get(self.list_url)
+        response = self.client.get(
+            self.list_url
+        )
 
         self.assertEqual(
             response.status_code,
             status.HTTP_200_OK,
         )
-        self.assertEqual(response.data["count"], 1)
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
         self.assertEqual(
             len(response.data["results"]),
             1,
         )
 
-    def test_approving_registration_creates_student(self):
+    def test_approving_registration_creates_student(
+        self,
+    ):
         self.client.force_authenticate(
             user=self.admin_user
         )
@@ -258,7 +306,9 @@ class RegistrationRequestAdminAPITests(APITestCase):
             self.detail_url,
             {
                 "status": (
-                    RegistrationRequest.Status.APPROVED
+                    RegistrationRequest
+                    .Status
+                    .APPROVED
                 ),
             },
             format="json",
@@ -298,14 +348,16 @@ class RegistrationRequestAdminAPITests(APITestCase):
         )
 
     def test_approving_registration_reuses_inactive_student(
-        self
+        self,
     ):
-        existing_student = Student.objects.create(
-            full_name="Existing Student",
-            phone=self.registration.phone,
-            age=None,
-            level="",
-            is_active=False,
+        existing_student = (
+            Student.objects.create(
+                full_name="Existing Student",
+                phone=self.registration.phone,
+                age=None,
+                level="",
+                is_active=False,
+            )
         )
 
         self.client.force_authenticate(
@@ -316,7 +368,9 @@ class RegistrationRequestAdminAPITests(APITestCase):
             self.detail_url,
             {
                 "status": (
-                    RegistrationRequest.Status.APPROVED
+                    RegistrationRequest
+                    .Status
+                    .APPROVED
                 ),
             },
             format="json",
@@ -338,14 +392,18 @@ class RegistrationRequestAdminAPITests(APITestCase):
             existing_student.is_active
         )
 
-    def test_admin_can_update_registration_status(self):
+    def test_admin_can_update_registration_status(
+        self,
+    ):
         self.client.force_authenticate(
             user=self.admin_user
         )
 
         response = self.client.patch(
             self.detail_url,
-            {"status": "contacted"},
+            {
+                "status": "contacted",
+            },
             format="json",
         )
 
@@ -358,87 +416,89 @@ class RegistrationRequestAdminAPITests(APITestCase):
 
         self.assertEqual(
             self.registration.status,
-            RegistrationRequest.Status.CONTACTED,
+            RegistrationRequest
+            .Status
+            .CONTACTED,
         )
 
         self.assertEqual(
             Student.objects.count(),
             0,
         )
+
     def test_approving_scheduled_registration_creates_booking(
-            self
-        ):
-            self.registration.preferred_day = (
+        self,
+    ):
+        self.registration.preferred_day = (
+            RegistrationRequest
+            .PreferredDay
+            .SATURDAY
+        )
+
+        self.registration.preferred_time = time(
+            7,
+            30,
+        )
+
+        self.registration.save(
+            update_fields=[
+                "preferred_day",
+                "preferred_time",
+            ]
+        )
+
+        self.client.force_authenticate(
+            user=self.admin_user
+        )
+
+        response = self.client.patch(
+            self.detail_url,
+            {
+                "status": (
+                    RegistrationRequest
+                    .Status
+                    .APPROVED
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        booking = ClassBooking.objects.get(
+            day=(
                 RegistrationRequest
                 .PreferredDay
                 .SATURDAY
-            )
+            ),
+            start_time=time(7, 30),
+        )
 
-            self.registration.preferred_time = time(
-                7,
-                30,
-            )
+        self.assertEqual(
+            booking.phone,
+            self.registration.phone,
+        )
 
-            self.registration.save(
-                update_fields=[
-                    "preferred_day",
-                    "preferred_time",
-                ]
-            )
+        self.assertEqual(
+            booking.student_name,
+            self.registration.full_name,
+        )
 
-            self.client.force_authenticate(
-                user=self.admin_user
-            )
+        self.assertEqual(
+            booking.instrument,
+            self.registration.instrument,
+        )
 
-            response = self.client.patch(
-                self.detail_url,
-                {
-                    "status": (
-                        RegistrationRequest
-                        .Status
-                        .APPROVED
-                    ),
-                },
-                format="json",
-            )
-
-            self.assertEqual(
-                response.status_code,
-                status.HTTP_200_OK,
-            )
-
-            booking = ClassBooking.objects.get(
-                day=(
-                    RegistrationRequest
-                    .PreferredDay
-                    .SATURDAY
-                ),
-                start_time=time(7, 30),
-            )
-
-            self.assertEqual(
-                booking.phone,
-                self.registration.phone,
-            )
-
-            self.assertEqual(
-                booking.student_name,
-                self.registration.full_name,
-            )
-
-            self.assertEqual(
-                booking.instrument,
-                self.registration.instrument,
-            )
-
-            self.assertEqual(
-                booking.student.phone,
-                self.registration.phone,
-            )
-
+        self.assertEqual(
+            booking.student.phone,
+            self.registration.phone,
+        )
 
     def test_cannot_approve_taken_time_slot(
-        self
+        self,
     ):
         self.registration.preferred_day = (
             RegistrationRequest
@@ -498,5 +558,88 @@ class RegistrationRequestAdminAPITests(APITestCase):
         self.assertFalse(
             Student.objects.filter(
                 phone=self.registration.phone,
+            ).exists()
+        )
+
+    def test_cannot_approve_slot_closed_after_request(
+        self,
+    ):
+        preferred_date = (
+            get_week_start()
+            + timedelta(days=9)
+        )
+
+        self.registration.preferred_date = (
+            preferred_date
+        )
+
+        self.registration.preferred_day = (
+            RegistrationRequest
+            .PreferredDay
+            .MONDAY
+        )
+
+        self.registration.preferred_time = time(
+            8,
+            0,
+        )
+
+        self.registration.save(
+            update_fields=[
+                "preferred_date",
+                "preferred_day",
+                "preferred_time",
+            ]
+        )
+
+        AvailabilityException.objects.create(
+            date=preferred_date,
+            start_time=time(8, 0),
+            end_time=time(12, 0),
+            reason="Teacher is unavailable",
+        )
+
+        self.client.force_authenticate(
+            user=self.admin_user
+        )
+
+        response = self.client.patch(
+            self.detail_url,
+            {
+                "status": (
+                    RegistrationRequest
+                    .Status
+                    .APPROVED
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.registration.refresh_from_db()
+
+        self.assertEqual(
+            self.registration.status,
+            RegistrationRequest.Status.NEW,
+        )
+
+        self.assertFalse(
+            Student.objects.filter(
+                phone=self.registration.phone,
+            ).exists()
+        )
+
+        self.assertFalse(
+            ClassBooking.objects.filter(
+                day=(
+                    RegistrationRequest
+                    .PreferredDay
+                    .MONDAY
+                ),
+                start_time=time(8, 0),
             ).exists()
         )

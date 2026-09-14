@@ -85,14 +85,28 @@ function Sidebar() {
       </nav>
 
 
-      <button
-        type="button"
-        className="admin-logout"
-        onClick={handleLogout}
-      >
-        <span>↪</span>
-        خروج از پنل
-      </button>
+      <div className="admin-sidebar-actions">
+
+        <NavLink
+          to="/"
+          end
+          className="admin-menu-item admin-home-link"
+        >
+          <span>↗</span>
+          بازگشت به صفحه اصلی
+        </NavLink>
+
+
+        <button
+          type="button"
+          className="admin-logout"
+          onClick={handleLogout}
+        >
+          <span>↪</span>
+          خروج از پنل
+        </button>
+
+      </div>
 
     </aside>
   );

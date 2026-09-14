@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db.models import (
     Case,
     IntegerField,
@@ -5,7 +7,10 @@ from django.db.models import (
     Value,
     When,
 )
+
 from django.utils import timezone
+
+from rest_framework import status
 
 from rest_framework.filters import (
     OrderingFilter,
@@ -24,12 +29,19 @@ from rest_framework.permissions import (
     IsAuthenticated,
 )
 
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .availability_service import (
+    get_public_unavailable_slots,
+    get_week_start,
+)
+
 from .models import ClassBooking
 
 from .serializers import (
     ClassBookingSerializer,
     MyScheduleSerializer,
-    PublicScheduleAvailabilitySerializer,
 )
 
 
@@ -97,6 +109,7 @@ class ClassBookingAdminListCreateView(
 ):
     queryset = ClassBooking.objects.all()
     serializer_class = ClassBookingSerializer
+
     permission_classes = [
         IsAdminUser,
     ]
@@ -151,6 +164,7 @@ class ClassBookingAdminDetailView(
 ):
     queryset = ClassBooking.objects.all()
     serializer_class = ClassBookingSerializer
+
     permission_classes = [
         IsAdminUser,
     ]
@@ -165,26 +179,64 @@ class ClassBookingAdminDetailView(
 
 
 class PublicScheduleAvailabilityView(
-    ListAPIView
+    APIView
 ):
-    queryset = (
-        ClassBooking.objects
-        .all()
-        .order_by(
-            "day",
-            "start_time",
-        )
-    )
-
-    serializer_class = (
-        PublicScheduleAvailabilitySerializer
-    )
-
     permission_classes = [
         AllowAny,
     ]
 
-    pagination_class = None
+    def get(
+        self,
+        request,
+    ):
+        week_start_value = (
+            request.query_params.get(
+                "weekStart"
+            )
+        )
+
+        if week_start_value:
+            try:
+                week_start = (
+                    date.fromisoformat(
+                        week_start_value
+                    )
+                )
+            except ValueError:
+                return Response(
+                    {
+                        "weekStart": (
+                            "تاریخ شروع هفته "
+                            "نامعتبر است."
+                        )
+                    },
+                    status=(
+                        status
+                        .HTTP_400_BAD_REQUEST
+                    ),
+                )
+
+            if week_start.weekday() != 5:
+                return Response(
+                    {
+                        "weekStart": (
+                            "تاریخ شروع هفته "
+                            "باید روز شنبه باشد."
+                        )
+                    },
+                    status=(
+                        status
+                        .HTTP_400_BAD_REQUEST
+                    ),
+                )
+        else:
+            week_start = get_week_start()
+
+        return Response(
+            get_public_unavailable_slots(
+                week_start=week_start
+            )
+        )
 
 
 class MyScheduleListView(

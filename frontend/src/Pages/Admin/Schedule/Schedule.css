@@ -982,3 +982,140 @@
   }
 
 }
+
+  .schedule-navigation {
+    justify-self: start;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-back-btn {
+    width: fit-content;
+
+    padding: 11px 20px;
+
+    color: #bae6fd;
+    background: rgba(56, 189, 248, 0.04);
+
+    border: 1px solid
+      rgba(56, 189, 248, 0.25);
+
+    border-radius: 12px;
+
+    font-family: inherit;
+    font-size: 14px;
+
+    cursor: pointer;
+
+    transition: 0.25s;
+  }
+
+  .dashboard-back-btn:hover {
+    color: #ffffff;
+    background: rgba(56, 189, 248, 0.1);
+
+    border-color: #38bdf8;
+
+    transform: translateY(-2px);
+  }
+
+  .schedule-current-date {
+    min-width: 245px;
+
+    justify-self: end;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+
+    padding: 11px 15px;
+
+    background:
+      rgba(56, 189, 248, 0.055);
+
+    border: 1px solid
+      rgba(56, 189, 248, 0.2);
+
+    border-radius: 13px;
+  }
+
+  .schedule-current-date div {
+    min-width: 0;
+  }
+
+  .schedule-current-date span,
+  .schedule-current-date strong {
+    display: block;
+  }
+
+  .schedule-current-date span {
+    margin-bottom: 3px;
+
+    color: rgba(186, 230, 253, 0.55);
+
+    font-size: 10px;
+  }
+
+  .schedule-current-date strong {
+    color: #e0f2fe;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+  }
+
+  .schedule-current-date time {
+    color: #38bdf8;
+
+    font-size: 21px;
+    font-weight: 900;
+
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1000px) {
+    .schedule-navigation {
+      order: 2;
+      justify-self: center;
+    }
+
+    .schedule-navigation .back-home-btn {
+      order: 0;
+    }
+
+    .schedule-current-date {
+      order: 3;
+      justify-self: center;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .schedule-navigation {
+      width: 100%;
+    }
+
+    .schedule-navigation button {
+      flex: 1;
+
+      padding-inline: 10px;
+
+      font-size: 12px;
+    }
+
+    .schedule-current-date {
+      width: min(100%, 360px);
+      min-width: 0;
+    }
+
+    .schedule-current-date strong {
+      font-size: 11px;
+    }
+
+    .schedule-current-date time {
+      font-size: 18px;
+    }
+  }

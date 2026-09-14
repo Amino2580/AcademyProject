@@ -45,6 +45,12 @@ class RegistrationRequest(models.Model):
         blank=True,
     )
 
+    preferred_date = models.DateField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     preferred_day = models.CharField(
         max_length=10,
         choices=PreferredDay.choices,

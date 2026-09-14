@@ -11,6 +11,7 @@ import {
 } from "../../../services/schedule";
 import { useNavigate } from "react-router-dom";
 import "./Schedule.css";
+import AvailabilityManager from "./AvailabilityManager";
 
 const DAYS = [
   "شنبه",
@@ -43,8 +44,60 @@ for (let h = 7; h <= 19; h++) {
 const makeId = (day, time) =>
   `${day}|${time}`;
 
+
+const CURRENT_DATE_FORMATTER =
+  new Intl.DateTimeFormat(
+    "fa-IR-u-ca-persian",
+    {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }
+  );
+
+
+const CURRENT_TIME_FORMATTER =
+  new Intl.DateTimeFormat(
+    "fa-IR",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }
+  );
+
+
+const formatCurrentDate = (date) => {
+  const dateParts =
+    CURRENT_DATE_FORMATTER.formatToParts(
+      date
+    );
+
+  const getPart = (type) =>
+    dateParts.find(
+      (part) => part.type === type
+    )?.value || "";
+
+  const weekday = getPart("weekday");
+
+  const dateText = [
+    getPart("day"),
+    getPart("month"),
+    getPart("year"),
+  ].join(" ");
+
+  return `${weekday}، ${dateText}`;
+};
+
+
 function Schedule() {
   const navigate = useNavigate();
+
+  const [
+    currentDateTime,
+    setCurrentDateTime,
+  ] = useState(() => new Date());
 
   const [bookings, setBookings] = useState({});
 
@@ -130,6 +183,20 @@ useEffect(() => {
     window.clearTimeout(timeoutId);
   };
 }, [loadBookings]);
+
+
+useEffect(() => {
+  const intervalId = window.setInterval(
+    () => {
+      setCurrentDateTime(new Date());
+    },
+    30000
+  );
+
+  return () => {
+    window.clearInterval(intervalId);
+  };
+}, []);
 
   /* ================= BOOKING ================= */
 
@@ -313,39 +380,29 @@ useEffect(() => {
   const selectedTime =
     selectedId?.split("|")[1];
 
-  /* ================= TODAY ================= */
-
-  const goToToday = () => {
-    const map = [
-      "یکشنبه",
-      "دوشنبه",
-      "سه‌شنبه",
-      "چهارشنبه",
-      "پنجشنبه",
-      "جمعه",
-      "شنبه",
-    ];
-
-    const today = map[new Date().getDay()];
-
-    if (DAYS.includes(today)) {
-      setDayFilter(today);
-    }
-  };
-
   return (
     <div className="schedule-page">
 
       {/* ================= HEADER ================= */}
 
       <header className="schedule-top">
+        <div className="schedule-navigation">
+          <button
+            type="button"
+            className="back-home-btn"
+            onClick={() => navigate("/")}
+          >
+            بازگشت به صفحه اصلی
+          </button>
 
-        <button
-          className="back-home-btn"
-          onClick={() => navigate("/")}
-        >
-         بازگشت به صفحه اصلی
-        </button>
+          <button
+            type="button"
+            className="back-home-btn"
+            onClick={() => navigate("/admin")}
+          >
+            بازگشت به داشبورد
+          </button>
+        </div>
 
         <div className="schedule-title">
           <h1>برنامه کلاسی میلاد طریقت</h1>
@@ -355,12 +412,21 @@ useEffect(() => {
           </p>
         </div>
 
-        <button
-          className="today-btn"
-          onClick={goToToday}
-        >
-          امروز
-        </button>
+        <div className="schedule-current-date">
+          <div>
+            <strong>
+              {formatCurrentDate(
+                currentDateTime
+              )}
+            </strong>
+          </div>
+
+          <time dir="ltr">
+            {CURRENT_TIME_FORMATTER.format(
+              currentDateTime
+            )}
+          </time>
+        </div>
 
       </header>
 
@@ -375,6 +441,7 @@ useEffect(() => {
           {error}
         </div>
       )}
+      <AvailabilityManager />
 
       {/* ================= TOOLBAR ================= */}
 

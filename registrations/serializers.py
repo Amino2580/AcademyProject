@@ -1,13 +1,17 @@
 import re
 
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 
+from schedules.availability_service import (
+    get_day_for_date,
+    is_slot_available,
+)
 from schedules.models import ClassBooking
 from students.models import Student
 
 from .models import RegistrationRequest
-
 
 class RegistrationRequestCreateSerializer(
     serializers.ModelSerializer
@@ -22,6 +26,16 @@ class RegistrationRequestCreateSerializer(
         max_length=100,
         required=False,
         allow_blank=True,
+    )
+
+    preferredDate = serializers.DateField(
+        source="preferred_date",
+        format="%Y-%m-%d",
+        input_formats=[
+            "%Y-%m-%d",
+        ],
+        required=False,
+        allow_null=True,
     )
 
     preferredDay = serializers.ChoiceField(
@@ -62,6 +76,7 @@ class RegistrationRequestCreateSerializer(
             "level",
             "instrument",
             "classType",
+            "preferredDate",
             "preferredDay",
             "preferredTime",
             "message",
@@ -147,6 +162,10 @@ class RegistrationRequestCreateSerializer(
         return value
 
     def validate(self, attrs):
+        preferred_date = attrs.get(
+            "preferred_date"
+        )
+
         preferred_day = attrs.get(
             "preferred_day",
             "",
@@ -154,6 +173,10 @@ class RegistrationRequestCreateSerializer(
 
         preferred_time = attrs.get(
             "preferred_time"
+        )
+
+        has_date = (
+            preferred_date is not None
         )
 
         has_day = bool(
@@ -170,12 +193,53 @@ class RegistrationRequestCreateSerializer(
                 "be selected together."
             )
 
+        if has_date and not (
+            has_day and has_time
+        ):
+            raise serializers.ValidationError(
+                {
+                    "preferredDate": (
+                        "Preferred date requires "
+                        "a day and time."
+                    )
+                }
+            )
+
+        if has_date:
+            if (
+                preferred_date
+                < timezone.localdate()
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "preferredDate": (
+                            "The selected date "
+                            "cannot be in the past."
+                        )
+                    }
+                )
+
+            actual_day = get_day_for_date(
+                preferred_date
+            )
+
+            if actual_day != preferred_day:
+                raise serializers.ValidationError(
+                    {
+                        "preferredDate": (
+                            "The selected date does "
+                            "not match the selected day."
+                        )
+                    }
+                )
+
         if (
             has_day
-            and ClassBooking.objects.filter(
-                day=preferred_day,
-                start_time=preferred_time,
-            ).exists()
+            and not is_slot_available(
+                preferred_day,
+                preferred_time,
+                requested_date=preferred_date,
+            )
         ):
             raise serializers.ValidationError(
                 {
@@ -199,6 +263,12 @@ class RegistrationRequestAdminSerializer(
 
     classType = serializers.CharField(
         source="class_type",
+        read_only=True,
+    )
+
+    preferredDate = serializers.DateField(
+        source="preferred_date",
+        format="%Y-%m-%d",
         read_only=True,
     )
 
@@ -239,6 +309,7 @@ class RegistrationRequestAdminSerializer(
             "level",
             "instrument",
             "classType",
+            "preferredDate",
             "preferredDay",
             "preferredDayLabel",
             "preferredTime",
@@ -256,10 +327,10 @@ class RegistrationRequestStatusUpdateSerializer(
 ):
     class Meta:
         model = RegistrationRequest
+
         fields = (
             "status",
         )
-
 
     @transaction.atomic
     def update(
@@ -267,6 +338,60 @@ class RegistrationRequestStatusUpdateSerializer(
         instance,
         validated_data,
     ):
+        target_status = validated_data.get(
+            "status",
+            instance.status,
+        )
+
+        if (
+            target_status
+            == RegistrationRequest.Status.APPROVED
+            and instance.preferred_day
+            and instance.preferred_time
+        ):
+            existing_booking = (
+                ClassBooking.objects.filter(
+                    day=instance.preferred_day,
+                    start_time=(
+                        instance.preferred_time
+                    ),
+                ).first()
+            )
+
+            if existing_booking is None:
+                is_available = (
+                    is_slot_available(
+                        instance.preferred_day,
+                        instance.preferred_time,
+                        requested_date=(
+                            instance.preferred_date
+                        ),
+                    )
+                )
+
+                if not is_available:
+                    raise serializers.ValidationError(
+                        {
+                            "status": (
+                                "The requested time "
+                                "is no longer available."
+                            )
+                        }
+                    )
+
+            elif (
+                existing_booking.phone
+                != instance.phone
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "status": (
+                            "This time slot is already "
+                            "assigned to another student."
+                        )
+                    }
+                )
+
         registration = super().update(
             instance,
             validated_data,
