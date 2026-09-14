@@ -172,18 +172,20 @@ function PublicSchedule({
   }, []);
 
 
-  const bookedSlots = useMemo(
+  const slotStatuses = useMemo(
     () =>
-      new Set(
-        bookings
-          .filter(
-            (booking) =>
-              booking.isBooked
-          )
-          .map(
-            (booking) =>
-              `${booking.day}-${booking.startTime}`
-          )
+      new Map(
+        bookings.map(
+          (slot) => [
+            `${slot.day}-${slot.startTime}`,
+            slot.status ||
+              (
+                slot.isBooked
+                  ? "booked"
+                  : "closed"
+              ),
+          ]
+        )
       ),
     [bookings]
   );
@@ -274,10 +276,23 @@ function PublicSchedule({
                     </th>
 
                     {DAYS.map((day) => {
-                      const isBooked =
-                        bookedSlots.has(
+                      const slotStatus =
+                        slotStatuses.get(
                           `${day.value}-${time}`
-                        );
+                        ) || "free";
+
+                      const isBooked =
+                        slotStatus === "booked";
+
+                      const isUnavailable =
+                        slotStatus !== "free";
+
+                      const statusLabel =
+                        isBooked
+                          ? "ظرفیت تکمیل"
+                          : isUnavailable
+                            ? "غیرقابل رزرو"
+                            : "ظرفیت آزاد";
 
                       return (
                         <td
@@ -286,11 +301,15 @@ function PublicSchedule({
                           <button
                             type="button"
                             className={
-                              isBooked
-                                ? "public-schedule-slot is-full"
-                                : "public-schedule-slot is-free"
+                              `public-schedule-slot ${
+                                isBooked
+                                  ? "is-full"
+                                  : isUnavailable
+                                    ? "is-closed"
+                                    : "is-free"
+                              }`
                             }
-                            disabled={isBooked}
+                            disabled={isUnavailable}
                             onClick={() =>
                               onRegister({
                                 day: day.value,
@@ -299,17 +318,11 @@ function PublicSchedule({
                               })
                             }
                             aria-label={
-                              `${day.label} ساعت ${time} - ${
-                                isBooked
-                                  ? "ظرفیت تکمیل"
-                                  : "ظرفیت آزاد"
-                              }`
+                              `${day.label} ساعت ${time} - ${statusLabel}`
                             }
                           >
                             <span>
-                              {isBooked
-                                ? "ظرفیت تکمیل"
-                                : "ظرفیت آزاد"}
+                              {statusLabel}
                             </span>
                           </button>
                         </td>

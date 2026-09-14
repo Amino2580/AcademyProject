@@ -219,7 +219,14 @@ def get_public_unavailable_slots(
                             "%H:%M"
                         )
                     ),
-                    "isBooked": True,
+                    "isBooked": (
+                        is_booked
+                    ),
+                    "status": (
+                        "booked"
+                        if is_booked
+                        else "closed"
+                    ),
                 }
             )
 

@@ -401,25 +401,44 @@ class PublicScheduleAvailabilityAPITests(
             status.HTTP_200_OK,
         )
 
-        self.assertEqual(
-            len(response.data),
-            1,
-        )
+        slots = {
+            (
+                item["day"],
+                item["startTime"],
+            ): item
+            for item in response.data
+        }
 
-        booking = response.data[0]
-
-        self.assertEqual(
-            booking["day"],
-            "saturday",
-        )
-
-        self.assertEqual(
-            booking["startTime"],
-            "09:00",
-        )
+        booking = slots[
+            (
+                "saturday",
+                "09:00",
+            )
+        ]
 
         self.assertTrue(
             booking["isBooked"]
+        )
+
+        self.assertEqual(
+            booking["status"],
+            "booked",
+        )
+
+        closed_slot = slots[
+            (
+                "friday",
+                "09:00",
+            )
+        ]
+
+        self.assertFalse(
+            closed_slot["isBooked"]
+        )
+
+        self.assertEqual(
+            closed_slot["status"],
+            "closed",
         )
 
     def test_public_api_hides_student_information(self):
@@ -427,7 +446,11 @@ class PublicScheduleAvailabilityAPITests(
             self.url
         )
 
-        booking = response.data[0]
+        booking = next(
+            item
+            for item in response.data
+            if item["isBooked"]
+        )
 
         self.assertEqual(
             set(booking.keys()),
@@ -436,6 +459,7 @@ class PublicScheduleAvailabilityAPITests(
                 "dayLabel",
                 "startTime",
                 "isBooked",
+                "status",
             },
         )
 

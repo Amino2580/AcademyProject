@@ -100,6 +100,14 @@
   opacity: 0.65;
 }
 
+.public-schedule-slot.is-closed {
+  cursor: not-allowed;
+  color: #94a3b8;
+  border-color: rgb(148 163 184 / 18%);
+  background: rgb(71 85 105 / 10%);
+  opacity: 0.62;
+}
+
 .public-schedule-message {
   max-width: 1500px;
   margin: 0 auto;
