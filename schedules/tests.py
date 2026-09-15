@@ -1,16 +1,25 @@
-from datetime import time
+from datetime import time, timedelta
 
 from accounts.models import UserProfile
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from students.models import Student
 
-from .models import ClassBooking
+from .availability_service import (
+    get_day_for_date,
+    get_week_start,
+)
+from .models import (
+    ClassBooking,
+    ClassSession,
+    Enrollment,
+)
 
 
 class ClassBookingAdminAPITests(APITestCase):
@@ -118,6 +127,177 @@ class ClassBookingAdminAPITests(APITestCase):
             "09:00",
         )
 
+    def test_multiple_weekly_days_share_one_month_term(
+        self,
+    ):
+        self.authenticate_admin()
+
+        next_saturday = (
+            get_week_start()
+            + timedelta(days=7)
+        )
+
+        first_response = self.client.post(
+            self.list_url,
+            {
+                **self.payload,
+                "firstClassDate": (
+                    next_saturday.isoformat()
+                ),
+            },
+            format="json",
+        )
+
+        second_response = self.client.post(
+            self.list_url,
+            {
+                **self.payload,
+                "day": "sunday",
+                "startTime": "10:00",
+                "firstClassDate": (
+                    next_saturday
+                    + timedelta(days=1)
+                ).isoformat(),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            first_response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(
+            second_response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        bookings = list(
+            ClassBooking.objects
+            .select_related("enrollment")
+            .order_by("day")
+        )
+
+        self.assertEqual(len(bookings), 2)
+        self.assertEqual(
+            bookings[0].enrollment_id,
+            bookings[1].enrollment_id,
+        )
+
+        enrollment = bookings[0].enrollment
+
+        self.assertEqual(
+            enrollment.starts_on,
+            next_saturday,
+        )
+        self.assertEqual(
+            enrollment.expires_on,
+            next_saturday
+            + timedelta(days=30),
+        )
+        self.assertEqual(
+            set(
+                ClassSession.objects
+                .values_list(
+                    "booking_id",
+                    flat=True,
+                )
+            ),
+            {booking.id for booking in bookings},
+        )
+        self.assertFalse(
+            ClassSession.objects.filter(
+                date__gte=enrollment.expires_on
+            ).exists()
+        )
+
+    def test_expired_term_does_not_block_new_term(
+        self,
+    ):
+        self.authenticate_admin()
+
+        first_saturday = (
+            get_week_start()
+            + timedelta(days=7)
+        )
+
+        first_response = self.client.post(
+            self.list_url,
+            {
+                **self.payload,
+                "firstClassDate": (
+                    first_saturday.isoformat()
+                ),
+            },
+            format="json",
+        )
+
+        next_term_start = (
+            first_saturday
+            + timedelta(days=35)
+        )
+
+        second_response = self.client.post(
+            self.list_url,
+            {
+                **self.payload,
+                "name": "Next Student",
+                "phone": "09120000002",
+                "firstClassDate": (
+                    next_term_start.isoformat()
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            first_response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(
+            second_response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(
+            ClassBooking.objects.filter(
+                day="saturday",
+                start_time=time(9, 0),
+            ).count(),
+            2,
+        )
+
+        first_week_response = self.client.get(
+            self.list_url,
+            {
+                "weekStart": (
+                    first_saturday.isoformat()
+                )
+            },
+        )
+        second_week_response = self.client.get(
+            self.list_url,
+            {
+                "weekStart": (
+                    next_term_start.isoformat()
+                )
+            },
+        )
+
+        self.assertEqual(
+            len(first_week_response.data),
+            1,
+        )
+        self.assertEqual(
+            first_week_response.data[0]["name"],
+            "Test Student",
+        )
+        self.assertEqual(
+            len(second_week_response.data),
+            1,
+        )
+        self.assertEqual(
+            second_week_response.data[0]["name"],
+            "Next Student",
+        )
 
     def test_admin_receives_unpaginated_booking_list(self):
         self.create_booking()
@@ -518,11 +698,41 @@ class MyScheduleAPITests(
             phone="09120000001",
         )
 
+        self.first_session_date = (
+            timezone.localdate()
+            + timedelta(days=1)
+        )
+
+        self.own_enrollment = (
+            Enrollment.objects.create(
+                student=self.own_student,
+                starts_on=self.first_session_date,
+                expires_on=(
+                    self.first_session_date
+                    + timedelta(days=30)
+                ),
+            )
+        )
+
+        self.other_enrollment = (
+            Enrollment.objects.create(
+                student=self.other_student,
+                starts_on=self.first_session_date,
+                expires_on=(
+                    self.first_session_date
+                    + timedelta(days=30)
+                ),
+            )
+        )
+
         self.own_booking = (
             ClassBooking.objects.create(
-                day=ClassBooking.Weekday.SATURDAY,
+                day=get_day_for_date(
+                    self.first_session_date
+                ),
                 start_time=time(9, 0),
                 student=self.own_student,
+                enrollment=self.own_enrollment,
                 student_name="Own Student",
                 phone="09120000000",
                 instrument="piano",
@@ -532,13 +742,36 @@ class MyScheduleAPITests(
 
         self.other_booking = (
             ClassBooking.objects.create(
-                day=ClassBooking.Weekday.SUNDAY,
+                day=get_day_for_date(
+                    self.first_session_date
+                ),
                 start_time=time(10, 0),
                 student=self.other_student,
+                enrollment=self.other_enrollment,
                 student_name="Other Student",
                 phone="09120000001",
                 instrument="piano",
                 notes="Other class",
+            )
+        )
+
+        self.own_sessions = [
+            ClassSession.objects.create(
+                booking=self.own_booking,
+                date=(
+                    self.first_session_date
+                    + timedelta(days=offset)
+                ),
+                start_time=time(9, 0),
+            )
+            for offset in (0, 7)
+        ]
+
+        self.other_session = (
+            ClassSession.objects.create(
+                booking=self.other_booking,
+                date=self.first_session_date,
+                start_time=time(10, 0),
             )
         )
 
@@ -578,17 +811,17 @@ class MyScheduleAPITests(
 
         self.assertEqual(
             len(response.data),
-            1,
+            2,
         )
 
         self.assertEqual(
             response.data[0]["id"],
-            self.own_booking.id,
+            self.own_sessions[0].id,
         )
 
         self.assertNotEqual(
             response.data[0]["id"],
-            self.other_booking.id,
+            self.other_session.id,
         )
 
         self.assertNotIn(
@@ -599,4 +832,22 @@ class MyScheduleAPITests(
         self.assertEqual(
             response.data[0]["startTime"],
             "09:00",
+        )
+
+        self.assertEqual(
+            response.data[0]["date"],
+            self.first_session_date.isoformat(),
+        )
+
+        self.assertEqual(
+            response.data[0]["status"],
+            ClassSession.Status.SCHEDULED,
+        )
+
+        self.assertEqual(
+            response.data[0]["termExpiresOn"],
+            (
+                self.first_session_date
+                + timedelta(days=30)
+            ).isoformat(),
         )

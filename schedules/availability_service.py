@@ -10,6 +10,7 @@ from django.utils import timezone
 from .models import (
     AvailabilityException,
     ClassBooking,
+    ClassSession,
     WeeklyAvailability,
 )
 
@@ -140,8 +141,23 @@ def get_public_unavailable_slots(
             )
         )
 
-    booked_slots = set(
-        ClassBooking.objects.values_list(
+    booked_session_slots = set(
+        ClassSession.objects.filter(
+            date__gte=week_start,
+            date__lte=(
+                week_start
+                + timedelta(days=6)
+            ),
+        ).values_list(
+            "date",
+            "start_time",
+        )
+    )
+
+    legacy_booked_slots = set(
+        ClassBooking.objects.filter(
+            enrollment__isnull=True,
+        ).values_list(
             "day",
             "start_time",
         )
@@ -181,9 +197,15 @@ def get_public_unavailable_slots(
 
         for slot_time in TIME_SLOTS:
             is_booked = (
-                day,
-                slot_time,
-            ) in booked_slots
+                (
+                    slot_date,
+                    slot_time,
+                ) in booked_session_slots
+                or (
+                    day,
+                    slot_time,
+                ) in legacy_booked_slots
+            )
 
             is_inside_working_hours = (
                 is_time_in_ranges(
@@ -245,9 +267,27 @@ def is_slot_available(
         return False
 
     if ClassBooking.objects.filter(
+        enrollment__isnull=True,
         day=day,
         start_time=slot_time,
     ).exists():
+        return False
+
+    sessions = ClassSession.objects.filter(
+        booking__day=day,
+        start_time=slot_time,
+    )
+
+    if requested_date is None:
+        sessions = sessions.filter(
+            date__gte=timezone.localdate()
+        )
+    else:
+        sessions = sessions.filter(
+            date=requested_date
+        )
+
+    if sessions.exists():
         return False
 
     is_inside_working_hours = (

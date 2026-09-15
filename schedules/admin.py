@@ -1,6 +1,10 @@
 from django.contrib import admin
 
-from .models import ClassBooking
+from .models import (
+    ClassBooking,
+    ClassSession,
+    Enrollment,
+)
 
 
 @admin.register(ClassBooking)
@@ -11,6 +15,7 @@ class ClassBookingAdmin(admin.ModelAdmin):
         "phone",
         "day_label",
         "start_time",
+        "enrollment",
         "instrument",
         "updated_at",
     )
@@ -44,3 +49,59 @@ class ClassBookingAdmin(admin.ModelAdmin):
     )
     def day_label(self, obj):
         return obj.get_day_display()
+
+
+@admin.register(Enrollment)
+class EnrollmentAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "student",
+        "starts_on",
+        "expires_on",
+        "is_active",
+    )
+
+    list_filter = (
+        "is_active",
+        "starts_on",
+        "expires_on",
+    )
+
+    search_fields = (
+        "student__full_name",
+        "student__phone",
+    )
+
+
+@admin.register(ClassSession)
+class ClassSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "student_name",
+        "date",
+        "start_time",
+        "status",
+    )
+
+    list_filter = (
+        "status",
+        "date",
+        "start_time",
+    )
+
+    search_fields = (
+        "booking__student_name",
+        "booking__phone",
+    )
+
+    ordering = (
+        "date",
+        "start_time",
+    )
+
+    @admin.display(
+        description="هنرجو",
+        ordering="booking__student_name",
+    )
+    def student_name(self, obj):
+        return obj.booking.student_name

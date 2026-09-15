@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 
 from accounts.services import (
@@ -7,7 +8,21 @@ from accounts.services import (
 )
 from students.models import Student
 
-from .models import ClassBooking
+from .availability_service import (
+    get_day_for_date,
+)
+from .models import (
+    ClassBooking,
+    ClassSession,
+)
+from .session_service import (
+    get_first_class_date,
+    get_or_create_enrollment,
+    get_reusable_enrollment,
+    get_term_expiration_date,
+    session_dates_have_conflict,
+    sync_booking_sessions,
+)
 
 
 class ClassBookingSerializer(
@@ -47,6 +62,28 @@ class ClassBookingSerializer(
         read_only=True,
     )
 
+    firstClassDate = serializers.DateField(
+        source="first_class_date",
+        format="%Y-%m-%d",
+        input_formats=[
+            "%Y-%m-%d",
+        ],
+        required=False,
+        write_only=True,
+    )
+
+    termStartsOn = serializers.DateField(
+        source="enrollment.starts_on",
+        format="%Y-%m-%d",
+        read_only=True,
+    )
+
+    termExpiresOn = serializers.DateField(
+        source="enrollment.expires_on",
+        format="%Y-%m-%d",
+        read_only=True,
+    )
+
     class Meta:
         model = ClassBooking
 
@@ -60,6 +97,9 @@ class ClassBookingSerializer(
             "phone",
             "instrument",
             "notes",
+            "firstClassDate",
+            "termStartsOn",
+            "termExpiresOn",
             "createdAt",
             "updatedAt",
         )
@@ -68,6 +108,8 @@ class ClassBookingSerializer(
             "id",
             "studentId",
             "dayLabel",
+            "termStartsOn",
+            "termExpiresOn",
             "createdAt",
             "updatedAt",
         )
@@ -139,21 +181,132 @@ class ClassBookingSerializer(
             ),
         )
 
-        queryset = ClassBooking.objects.filter(
-            day=day,
-            start_time=start_time,
+        requested_first_class_date = attrs.get(
+            "first_class_date"
         )
 
-        if self.instance:
-            queryset = queryset.exclude(
-                pk=self.instance.pk
+        first_class_date = (
+            requested_first_class_date
+        )
+
+        if first_class_date is None:
+            first_class_date = (
+                get_first_class_date(
+                    day,
+                    start_time,
+                )
             )
 
-        if queryset.exists():
+        if (
+            get_day_for_date(first_class_date)
+            != day
+        ):
+            raise serializers.ValidationError(
+                {
+                    "firstClassDate": (
+                        "تاریخ اولین جلسه با روز "
+                        "انتخاب‌شده هماهنگ نیست."
+                    )
+                }
+            )
+
+        current_date_time = timezone.localtime()
+        current_time = (
+            current_date_time.time()
+            .replace(tzinfo=None)
+        )
+
+        if (
+            first_class_date
+            < current_date_time.date()
+            or (
+                first_class_date
+                == current_date_time.date()
+                and start_time
+                <= current_time
+            )
+        ):
+            raise serializers.ValidationError(
+                {
+                    "firstClassDate": (
+                        "اولین جلسه باید در آینده باشد."
+                    )
+                }
+            )
+
+        phone = attrs.get(
+            "phone",
+            getattr(
+                self.instance,
+                "phone",
+                "",
+            ),
+        )
+
+        student = (
+            Student.objects.filter(
+                phone=phone
+            ).first()
+        )
+
+        enrollment = None
+
+        if (
+            self.instance is not None
+            and self.instance.enrollment_id
+            and self.instance.student_id
+            == getattr(student, "id", None)
+            and (
+                requested_first_class_date
+                is None
+                or (
+                    self.instance.enrollment.starts_on
+                    <= first_class_date
+                    < self.instance.enrollment.expires_on
+                )
+            )
+        ):
+            enrollment = self.instance.enrollment
+
+        if enrollment is None and student:
+            enrollment = get_reusable_enrollment(
+                student,
+                first_class_date,
+            )
+
+        starts_on = first_class_date
+
+        if (
+            enrollment
+            and enrollment.starts_on
+            <= first_class_date
+        ):
+            starts_on = enrollment.starts_on
+
+        expires_on = (
+            enrollment.expires_on
+            if (
+                enrollment
+                and starts_on
+                == enrollment.starts_on
+            )
+            else get_term_expiration_date(
+                starts_on
+            )
+        )
+
+        if session_dates_have_conflict(
+            day,
+            start_time,
+            starts_on,
+            expires_on,
+            exclude_booking=self.instance,
+        ):
             raise serializers.ValidationError(
                 {
                     "startTime": (
-                        "This time slot is already booked."
+                        "این زمان در بخشی از دوره "
+                        "یک‌ماهه رزرو شده است."
                     )
                 }
             )
@@ -189,6 +342,13 @@ class ClassBookingSerializer(
 
     @transaction.atomic
     def create(self, validated_data):
+        first_class_date = (
+            validated_data.pop(
+                "first_class_date",
+                None,
+            )
+        )
+
         student = self.get_or_create_student(
             phone=validated_data["phone"],
             full_name=validated_data[
@@ -198,9 +358,28 @@ class ClassBookingSerializer(
 
         validated_data["student"] = student
 
-        return super().create(
+        if first_class_date is None:
+            first_class_date = (
+                get_first_class_date(
+                    validated_data["day"],
+                    validated_data["start_time"],
+                )
+            )
+
+        validated_data["enrollment"] = (
+            get_or_create_enrollment(
+                student,
+                first_class_date,
+            )
+        )
+
+        booking = super().create(
             validated_data
         )
+
+        sync_booking_sessions(booking)
+
+        return booking
 
 
     @transaction.atomic
@@ -209,6 +388,13 @@ class ClassBookingSerializer(
         instance,
         validated_data,
     ):
+        first_class_date = (
+            validated_data.pop(
+                "first_class_date",
+                None,
+            )
+        )
+
         phone = validated_data.get(
             "phone",
             instance.phone,
@@ -226,10 +412,42 @@ class ClassBookingSerializer(
 
         validated_data["student"] = student
 
-        return super().update(
+        should_replace_enrollment = (
+            instance.enrollment_id is None
+            or instance.student_id != student.id
+            or first_class_date is not None
+        )
+
+        if should_replace_enrollment:
+            if first_class_date is None:
+                first_class_date = (
+                    get_first_class_date(
+                        validated_data.get(
+                            "day",
+                            instance.day,
+                        ),
+                        validated_data.get(
+                            "start_time",
+                            instance.start_time,
+                        ),
+                    )
+                )
+
+            validated_data["enrollment"] = (
+                get_or_create_enrollment(
+                    student,
+                    first_class_date,
+                )
+            )
+
+        booking = super().update(
             instance,
             validated_data,
         )
+
+        sync_booking_sessions(booking)
+
+        return booking
 
 class PublicScheduleAvailabilitySerializer(
     serializers.ModelSerializer
@@ -265,8 +483,18 @@ class PublicScheduleAvailabilitySerializer(
 class MyScheduleSerializer(
     serializers.ModelSerializer
 ):
+    bookingId = serializers.IntegerField(
+        source="booking_id",
+        read_only=True,
+    )
+
+    day = serializers.CharField(
+        source="booking.day",
+        read_only=True,
+    )
+
     dayLabel = serializers.CharField(
-        source="get_day_display",
+        source="booking.get_day_display",
         read_only=True,
     )
 
@@ -277,21 +505,60 @@ class MyScheduleSerializer(
     )
 
     name = serializers.CharField(
-        source="student_name",
+        source="booking.student_name",
+        read_only=True,
+    )
+
+    instrument = serializers.CharField(
+        source="booking.instrument",
+        read_only=True,
+    )
+
+    notes = serializers.CharField(
+        source="booking.notes",
+        read_only=True,
+    )
+
+    statusLabel = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
+
+    termStartsOn = serializers.DateField(
+        source="booking.enrollment.starts_on",
+        format="%Y-%m-%d",
+        read_only=True,
+    )
+
+    termExpiresOn = serializers.DateField(
+        source="booking.enrollment.expires_on",
+        format="%Y-%m-%d",
         read_only=True,
     )
 
     class Meta:
-        model = ClassBooking
+        model = ClassSession
 
         fields = (
             "id",
+            "bookingId",
+            "date",
             "day",
             "dayLabel",
             "startTime",
             "name",
             "instrument",
             "notes",
+            "status",
+            "statusLabel",
+            "cancellationReason",
+            "termStartsOn",
+            "termExpiresOn",
         )
 
         read_only_fields = fields
+
+    cancellationReason = serializers.CharField(
+        source="cancellation_reason",
+        read_only=True,
+    )

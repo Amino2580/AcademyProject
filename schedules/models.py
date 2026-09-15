@@ -4,6 +4,62 @@ from django.db.models import F, Q
 from students.models import Student
 
 
+class Enrollment(models.Model):
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.PROTECT,
+        related_name="enrollments",
+    )
+
+    starts_on = models.DateField(
+        db_index=True,
+    )
+
+    expires_on = models.DateField(
+        db_index=True,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = [
+            "-starts_on",
+            "-created_at",
+        ]
+
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(
+                    starts_on__lt=F(
+                        "expires_on"
+                    )
+                ),
+                name=(
+                    "enrollment_starts_before_"
+                    "expiration"
+                ),
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.student.full_name} - "
+            f"{self.starts_on} تا "
+            f"{self.expires_on}"
+        )
+
+
 class ClassBooking(models.Model):
     class Weekday(models.TextChoices):
         SATURDAY = "saturday", "شنبه"
@@ -28,6 +84,14 @@ class ClassBooking(models.Model):
         Student,
         on_delete=models.SET_NULL,
         related_name="class_bookings",
+        null=True,
+        blank=True,
+    )
+
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.CASCADE,
+        related_name="weekly_bookings",
         null=True,
         blank=True,
     )
@@ -62,18 +126,6 @@ class ClassBooking(models.Model):
         ordering = [
             "day",
             "start_time",
-        ]
-
-        constraints = [
-            models.UniqueConstraint(
-                fields=[
-                    "day",
-                    "start_time",
-                ],
-                name=(
-                    "unique_class_booking_slot"
-                ),
-            ),
         ]
 
     def __str__(self):
@@ -261,4 +313,98 @@ class AvailabilityException(models.Model):
             f"{self.date} "
             f"{self.start_time:%H:%M} تا "
             f"{self.end_time:%H:%M}"
+        )
+
+
+class ClassSession(models.Model):
+    class Status(models.TextChoices):
+        SCHEDULED = (
+            "scheduled",
+            "برگزار می‌شود",
+        )
+        CANCELLED = (
+            "cancelled",
+            "لغو شده",
+        )
+        COMPLETED = (
+            "completed",
+            "برگزار شده",
+        )
+
+    booking = models.ForeignKey(
+        ClassBooking,
+        on_delete=models.CASCADE,
+        related_name="sessions",
+    )
+
+    date = models.DateField(
+        db_index=True,
+    )
+
+    start_time = models.TimeField(
+        db_index=True,
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.SCHEDULED,
+        db_index=True,
+    )
+
+    cancellation_reason = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+
+    availability_exception = (
+        models.ForeignKey(
+            AvailabilityException,
+            on_delete=models.SET_NULL,
+            related_name="cancelled_sessions",
+            null=True,
+            blank=True,
+        )
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = [
+            "date",
+            "start_time",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "date",
+                    "start_time",
+                ],
+                name=(
+                    "unique_class_session_slot"
+                ),
+            ),
+            models.UniqueConstraint(
+                fields=[
+                    "booking",
+                    "date",
+                ],
+                name=(
+                    "unique_booking_session_date"
+                ),
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.date} "
+            f"{self.start_time:%H:%M} - "
+            f"{self.booking.student_name}"
         )

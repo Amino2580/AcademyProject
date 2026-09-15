@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAdminUser
@@ -52,8 +53,16 @@ class AdminDashboardView(APIView):
         else:
             today_schedule = (
                 ClassBooking.objects.filter(
-                    day=today_value
-                ).order_by(
+                    Q(
+                        enrollment__isnull=True,
+                        day=today_value,
+                    )
+                    | Q(
+                        sessions__date=today
+                    )
+                )
+                .distinct()
+                .order_by(
                     "start_time",
                     "id",
                 )
@@ -83,7 +92,15 @@ class AdminDashboardView(APIView):
                 ).count()
             ),
             "activeClasses": (
-                ClassBooking.objects.count()
+                ClassBooking.objects.filter(
+                    Q(enrollment__isnull=True)
+                    | Q(
+                        enrollment__is_active=True,
+                        enrollment__expires_on__gt=today,
+                    )
+                )
+                .distinct()
+                .count()
             ),
             "newRegistrations": (
                 RegistrationRequest.objects.filter(

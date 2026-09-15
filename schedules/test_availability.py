@@ -16,12 +16,16 @@ from rest_framework.test import APITestCase
 from .models import (
     AvailabilityException,
     ClassBooking,
+    ClassSession,
+    Enrollment,
     WeeklyAvailability,
 )
 
 from .availability_service import (
+    get_day_for_date,
     get_week_start,
 )
+from students.models import Student
 
 
 class WeeklyAvailabilityAPITests(
@@ -275,6 +279,91 @@ class AvailabilityExceptionAPITests(
 
         self.assertFalse(
             exception.is_full_day
+        )
+
+    def test_exception_cancels_and_delete_restores_session(
+        self,
+    ):
+        student = Student.objects.create(
+            full_name="Session Student",
+            phone="09121111111",
+        )
+        enrollment = Enrollment.objects.create(
+            student=student,
+            starts_on=self.future_date,
+            expires_on=(
+                self.future_date
+                + timedelta(days=30)
+            ),
+        )
+        booking = ClassBooking.objects.create(
+            student=student,
+            enrollment=enrollment,
+            day=get_day_for_date(
+                self.future_date
+            ),
+            start_time=time(9, 0),
+            student_name=student.full_name,
+            phone=student.phone,
+        )
+        session = ClassSession.objects.create(
+            booking=booking,
+            date=self.future_date,
+            start_time=time(9, 0),
+        )
+
+        response = self.client.post(
+            self.list_url,
+            {
+                "date": (
+                    self.future_date.isoformat()
+                ),
+                "startTime": "08:00",
+                "endTime": "12:00",
+                "reason": "قرار ضروری استاد",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        session.refresh_from_db()
+
+        self.assertEqual(
+            session.status,
+            ClassSession.Status.CANCELLED,
+        )
+        self.assertEqual(
+            session.cancellation_reason,
+            "قرار ضروری استاد",
+        )
+
+        detail_url = reverse(
+            "schedule_admin:exception-detail",
+            kwargs={"pk": response.data["id"]},
+        )
+
+        delete_response = self.client.delete(
+            detail_url
+        )
+
+        self.assertEqual(
+            delete_response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        session.refresh_from_db()
+
+        self.assertEqual(
+            session.status,
+            ClassSession.Status.SCHEDULED,
+        )
+        self.assertEqual(
+            session.cancellation_reason,
+            "",
         )
 
     def test_reject_overlapping_exception(

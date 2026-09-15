@@ -74,6 +74,14 @@ class RegistrationRequest(models.Model):
         db_index=True,
     )
 
+    enrollment = models.OneToOneField(
+        "schedules.Enrollment",
+        on_delete=models.SET_NULL,
+        related_name="registration_request",
+        null=True,
+        blank=True,
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
     )

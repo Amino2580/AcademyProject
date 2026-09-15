@@ -4,9 +4,17 @@ import {
 } from "./api";
 
 
-export function getScheduleBookings() {
+export function getScheduleBookings(
+  weekStart = ""
+) {
+  const query = weekStart
+    ? `?weekStart=${encodeURIComponent(
+        weekStart
+      )}`
+    : "";
+
   return apiRequest(
-    "/api/admin/schedule/"
+    `/api/admin/schedule/${query}`
   );
 }
 

@@ -1,12 +1,6 @@
-from datetime import date
+from datetime import date, timedelta
 
-from django.db.models import (
-    Case,
-    IntegerField,
-    Q,
-    Value,
-    When,
-)
+from django.db.models import Q
 
 from django.utils import timezone
 
@@ -15,6 +9,10 @@ from rest_framework import status
 from rest_framework.filters import (
     OrderingFilter,
     SearchFilter,
+)
+
+from rest_framework.exceptions import (
+    ValidationError,
 )
 
 from rest_framework.generics import (
@@ -37,72 +35,15 @@ from .availability_service import (
     get_week_start,
 )
 
-from .models import ClassBooking
+from .models import (
+    ClassBooking,
+    ClassSession,
+)
 
 from .serializers import (
     ClassBookingSerializer,
     MyScheduleSerializer,
 )
-
-
-WEEKDAY_NUMBERS = {
-    ClassBooking.Weekday.MONDAY: 0,
-    ClassBooking.Weekday.TUESDAY: 1,
-    ClassBooking.Weekday.WEDNESDAY: 2,
-    ClassBooking.Weekday.THURSDAY: 3,
-    ClassBooking.Weekday.FRIDAY: 4,
-    ClassBooking.Weekday.SATURDAY: 5,
-    ClassBooking.Weekday.SUNDAY: 6,
-}
-
-
-def get_upcoming_class_order():
-    current_date_time = (
-        timezone.localtime()
-    )
-
-    current_weekday = (
-        current_date_time.weekday()
-    )
-
-    current_time = (
-        current_date_time.time()
-    )
-
-    ordering_conditions = []
-
-    for (
-        day_value,
-        weekday_number,
-    ) in WEEKDAY_NUMBERS.items():
-        days_until_class = (
-            weekday_number
-            - current_weekday
-        ) % 7
-
-        if days_until_class == 0:
-            ordering_conditions.append(
-                When(
-                    day=day_value,
-                    start_time__lt=current_time,
-                    then=Value(7),
-                )
-            )
-
-        ordering_conditions.append(
-            When(
-                day=day_value,
-                then=Value(
-                    days_until_class
-                ),
-            )
-        )
-
-    return Case(
-        *ordering_conditions,
-        default=Value(8),
-        output_field=IntegerField(),
-    )
 
 
 class ClassBookingAdminListCreateView(
@@ -144,7 +85,64 @@ class ClassBookingAdminListCreateView(
     def get_queryset(self):
         queryset = (
             super().get_queryset()
+            .select_related(
+                "student",
+                "enrollment",
+            )
         )
+
+        week_start_value = (
+            self.request.query_params.get(
+                "weekStart"
+            )
+        )
+
+        if week_start_value:
+            try:
+                week_start = date.fromisoformat(
+                    week_start_value
+                )
+            except ValueError as exc:
+                raise ValidationError(
+                    {
+                        "weekStart": (
+                            "تاریخ شروع هفته "
+                            "نامعتبر است."
+                        )
+                    }
+                ) from exc
+
+            if week_start.weekday() != 5:
+                raise ValidationError(
+                    {
+                        "weekStart": (
+                            "تاریخ شروع هفته باید "
+                            "روز شنبه باشد."
+                        )
+                    }
+                )
+
+            week_end = week_start + timedelta(
+                days=6
+            )
+
+            queryset = queryset.filter(
+                Q(enrollment__isnull=True)
+                | Q(
+                    sessions__date__gte=week_start,
+                    sessions__date__lte=week_end,
+                )
+            )
+        else:
+            queryset = queryset.filter(
+                Q(enrollment__isnull=True)
+                | Q(
+                    enrollment__is_active=True,
+                    enrollment__expires_on__gt=(
+                        timezone.localdate()
+                    ),
+                )
+            )
 
         day = (
             self.request
@@ -157,7 +155,7 @@ class ClassBookingAdminListCreateView(
                 day=day
             )
 
-        return queryset
+        return queryset.distinct()
 
 
 class ClassBookingAdminDetailView(
@@ -262,29 +260,56 @@ class MyScheduleListView(
 
         if profile is None:
             return (
-                ClassBooking.objects.none()
+                ClassSession.objects.none()
             )
 
+        current_date_time = timezone.localtime()
+        current_time = (
+            current_date_time.time()
+            .replace(tzinfo=None)
+        )
+
         return (
-            ClassBooking.objects
-            .select_related("student")
+            ClassSession.objects
+            .select_related(
+                "booking",
+                "booking__student",
+                "booking__enrollment",
+                "availability_exception",
+            )
+            .filter(
+                booking__enrollment__is_active=True,
+                booking__enrollment__expires_on__gt=(
+                    current_date_time.date()
+                ),
+            )
+            .filter(
+                (
+                    Q(
+                        booking__student__phone=(
+                            profile.phone
+                        )
+                    )
+                    | Q(
+                        booking__phone=profile.phone
+                    )
+                )
+            )
             .filter(
                 Q(
-                    student__phone=(
-                        profile.phone
+                    date__gt=(
+                        current_date_time.date()
                     )
                 )
                 | Q(
-                    phone=profile.phone
-                )
-            )
-            .annotate(
-                upcoming_order=(
-                    get_upcoming_class_order()
+                    date=(
+                        current_date_time.date()
+                    ),
+                    start_time__gte=current_time,
                 )
             )
             .order_by(
-                "upcoming_order",
+                "date",
                 "start_time",
             )
         )

@@ -49,7 +49,12 @@
 .my-schedule-header-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
+}
+
+.my-schedule-current-date {
+  flex: 0 0 auto;
 }
 
 .my-schedule-header button,
@@ -78,8 +83,10 @@
 .my-schedule-grid {
   display: grid;
   max-width: 1300px;
-  grid-template-columns:
-    repeat(auto-fit, minmax(520px, 800px));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(400px, 1fr)
+  );
   justify-content: center;
   gap: 22px;
   margin: 0 auto;
@@ -114,6 +121,20 @@
     );
 }
 
+.my-schedule-card.cancelled {
+  border-color: rgb(248 113 113 / 28%);
+}
+
+.my-schedule-card.cancelled
+  .my-schedule-card-shine {
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #f87171
+    );
+}
+
 .my-schedule-card-heading {
   display: grid;
   grid-template-columns: 1fr 190px;
@@ -138,14 +159,15 @@
 }
 
 .my-schedule-day strong,
-.my-schedule-day h2 {
+.my-schedule-day h2,
+.my-schedule-day time {
   display: block;
   margin: 0;
   color: #ffffff;
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1.4;
-  white-space: nowrap;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.7;
+  text-decoration: none;
 }
 
 .my-schedule-time-box {
@@ -213,6 +235,17 @@
   box-shadow: 0 0 9px rgb(61 220 151 / 55%);
 }
 
+.my-schedule-active-status.cancelled {
+  border-color: rgb(248 113 113 / 28%);
+  color: #fda4af;
+  background: rgb(248 113 113 / 8%);
+}
+
+.my-schedule-active-status.cancelled i {
+  background: #f87171;
+  box-shadow: 0 0 9px rgb(248 113 113 / 45%);
+}
+
 .my-schedule-details {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -266,7 +299,8 @@
   line-height: 1.7;
 }
 
-.my-schedule-notes {
+.my-schedule-notes,
+.my-schedule-cancellation {
   margin-top: 14px;
   padding: 16px 18px;
   border: 1px solid #283a55;
@@ -274,19 +308,31 @@
   background: rgb(7 15 28 / 22%);
 }
 
-.my-schedule-notes span {
+.my-schedule-notes span,
+.my-schedule-cancellation span {
   display: block;
   color: #8f9db2;
   font-size: 13px;
   font-weight: 600;
 }
 
-.my-schedule-notes p {
+.my-schedule-notes p,
+.my-schedule-cancellation p {
   margin: 8px 0 0;
   color: #c8d1df;
   font-size: 15px;
   line-height: 1.9;
   overflow-wrap: anywhere;
+}
+
+.my-schedule-cancellation {
+  border-color: rgb(248 113 113 / 22%);
+  background: rgb(248 113 113 / 6%);
+}
+
+.my-schedule-cancellation span,
+.my-schedule-cancellation p {
+  color: #fda4af;
 }
 
 .my-schedule-message {

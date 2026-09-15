@@ -21,7 +21,10 @@ class RegistrationRequestCreateView(CreateAPIView):
 
 
 class RegistrationRequestAdminListView(ListAPIView):
-    queryset = RegistrationRequest.objects.all()
+    queryset = (
+        RegistrationRequest.objects
+        .select_related("enrollment")
+    )
     serializer_class = RegistrationRequestAdminSerializer
     permission_classes = [IsAdminUser]
 
@@ -61,7 +64,10 @@ class RegistrationRequestAdminListView(ListAPIView):
 class RegistrationRequestAdminDetailView(
     RetrieveUpdateAPIView
 ):
-    queryset = RegistrationRequest.objects.all()
+    queryset = (
+        RegistrationRequest.objects
+        .select_related("enrollment")
+    )
     permission_classes = [IsAdminUser]
 
     http_method_names = [

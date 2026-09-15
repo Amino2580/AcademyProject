@@ -5,15 +5,49 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 
+import CurrentDateTimeCard from "../../Components/CurrentDateTimeCard/CurrentDateTimeCard";
 import {
   getMySchedule,
 } from "../../services/schedule";
+import {
+  formatPersianFullDate,
+} from "../../utils/persianDateTime";
 
 import "./MySchedule.css";
 
 
+function parseLocalDate(value) {
+  if (!value) return null;
+
+  const [year, month, day] = value
+    .split("-")
+    .map(Number);
+
+  return new Date(
+    year,
+    month - 1,
+    day,
+    12,
+  );
+}
+
+
+function formatSessionDate(value) {
+  const date = parseLocalDate(value);
+
+  return date
+    ? formatPersianFullDate(date)
+    : "تاریخ مشخص نشده";
+}
+
+
 function MySchedule() {
   const navigate = useNavigate();
+
+  const [
+    currentDateTime,
+    setCurrentDateTime,
+  ] = useState(() => new Date());
 
   const [classes, setClasses] =
     useState([]);
@@ -77,6 +111,24 @@ function MySchedule() {
   }, [loadMySchedule]);
 
 
+  useEffect(() => {
+    const intervalId = window.setInterval(
+      () => {
+        setCurrentDateTime(new Date());
+      },
+      30000
+    );
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+
+  const termExpiresOn =
+    classes[0]?.termExpiresOn;
+
+
   return (
     <main
       className="my-schedule-page"
@@ -89,11 +141,24 @@ function MySchedule() {
           <h1>کلاس‌های من</h1>
 
           <p>
-            برنامه هفتگی کلاس‌های ثبت‌شده شما
+            تمام جلسه‌های دوره یک‌ماهه شما
+            {termExpiresOn && (
+              <>
+                {" — "}
+                اعتبار تا {formatSessionDate(
+                  termExpiresOn
+                )}
+              </>
+            )}
           </p>
         </div>
 
         <div className="my-schedule-header-actions">
+          <CurrentDateTimeCard
+            value={currentDateTime}
+            className="my-schedule-current-date"
+          />
+
           <button
             type="button"
             onClick={() =>
@@ -146,7 +211,11 @@ function MySchedule() {
           {classes.map(
             (classItem) => (
               <article
-                className="my-schedule-card"
+                className={`my-schedule-card ${
+                  classItem.status === "cancelled"
+                    ? "cancelled"
+                    : ""
+                }`}
                 key={classItem.id}
               >
                 <div
@@ -157,12 +226,16 @@ function MySchedule() {
                 <div className="my-schedule-card-heading">
                   <div className="my-schedule-day">
                     <span>
-                      جلسه هفتگی
+                      جلسه برنامه‌ریزی‌شده
                     </span>
 
-                    <strong>
-                      {classItem.dayLabel}
-                    </strong>
+                    <time
+                      dateTime={classItem.date}
+                    >
+                      {formatSessionDate(
+                        classItem.date
+                      )}
+                    </time>
                   </div>
 
                   <div className="my-schedule-time-box">
@@ -176,10 +249,16 @@ function MySchedule() {
                   </div>
                 </div>
 
-                <div className="my-schedule-active-status">
+                <div
+                  className={`my-schedule-active-status ${
+                    classItem.status === "cancelled"
+                      ? "cancelled"
+                      : ""
+                  }`}
+                >
                   <i aria-hidden="true" />
 
-                  کلاس فعال
+                  {classItem.statusLabel}
                 </div>
 
                 <div className="my-schedule-details">
@@ -215,6 +294,16 @@ function MySchedule() {
 
                     <p>
                       {classItem.notes}
+                    </p>
+                  </div>
+                )}
+
+                {classItem.cancellationReason && (
+                  <div className="my-schedule-cancellation">
+                    <span>دلیل لغو جلسه</span>
+
+                    <p>
+                      {classItem.cancellationReason}
                     </p>
                   </div>
                 )}

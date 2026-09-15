@@ -11,6 +11,8 @@ from schedules.availability_service import (
 from schedules.models import (
     AvailabilityException,
     ClassBooking,
+    ClassSession,
+    Enrollment,
 )
 from students.models import Student
 
@@ -495,6 +497,46 @@ class RegistrationRequestAdminAPITests(
         self.assertEqual(
             booking.student.phone,
             self.registration.phone,
+        )
+
+        enrollment = Enrollment.objects.get(
+            student=booking.student
+        )
+
+        self.assertEqual(
+            booking.enrollment,
+            enrollment,
+        )
+
+        self.registration.refresh_from_db()
+
+        self.assertEqual(
+            self.registration.enrollment,
+            enrollment,
+        )
+        self.assertEqual(
+            (
+                enrollment.expires_on
+                - enrollment.starts_on
+            ).days,
+            30,
+        )
+
+        sessions = ClassSession.objects.filter(
+            booking=booking
+        )
+
+        self.assertGreaterEqual(
+            sessions.count(),
+            4,
+        )
+        self.assertTrue(
+            all(
+                enrollment.starts_on
+                <= session.date
+                < enrollment.expires_on
+                for session in sessions
+            )
         )
 
     def test_cannot_approve_taken_time_slot(

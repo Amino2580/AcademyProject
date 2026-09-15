@@ -288,7 +288,9 @@ function Schedule() {
 
     try {
       const data =
-        await getScheduleBookings();
+        await getScheduleBookings(
+          weekStartIso
+        );
 
       const bookingMap = {};
 
@@ -327,7 +329,7 @@ function Schedule() {
       setLoading(false);
     }
   },
-  [navigate]
+  [navigate, weekStartIso]
 );
 
 
@@ -458,9 +460,16 @@ useEffect(() => {
         bookingData
       );
     } else {
+      const firstClassDate =
+        weekDays.find(
+          (day) =>
+            day.label === selectedDay
+        )?.isoDate;
+
       await createScheduleBooking({
         day: DAY_VALUES[selectedDay],
         startTime: selectedTime,
+        firstClassDate,
         ...bookingData,
       });
     }

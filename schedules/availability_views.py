@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
@@ -15,6 +17,9 @@ from .availability_serializers import (
 from .models import (
     AvailabilityException,
     WeeklyAvailability,
+)
+from .session_service import (
+    restore_sessions_for_exception,
 )
 
 
@@ -160,3 +165,11 @@ class AvailabilityExceptionDetailView(
         "head",
         "options",
     ]
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        restore_sessions_for_exception(
+            instance
+        )
+
+        super().perform_destroy(instance)

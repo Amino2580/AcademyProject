@@ -1,11 +1,16 @@
 from datetime import time
 
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
 from .models import (
     AvailabilityException,
     WeeklyAvailability,
+)
+from .session_service import (
+    restore_sessions_for_exception,
+    sync_sessions_for_exception,
 )
 
 
@@ -399,3 +404,36 @@ class AvailabilityExceptionSerializer(
             )
 
         return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        exception = super().create(
+            validated_data
+        )
+
+        sync_sessions_for_exception(
+            exception
+        )
+
+        return exception
+
+    @transaction.atomic
+    def update(
+        self,
+        instance,
+        validated_data,
+    ):
+        restore_sessions_for_exception(
+            instance
+        )
+
+        exception = super().update(
+            instance,
+            validated_data,
+        )
+
+        sync_sessions_for_exception(
+            exception
+        )
+
+        return exception
