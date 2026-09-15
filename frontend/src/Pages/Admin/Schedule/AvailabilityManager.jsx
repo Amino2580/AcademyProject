@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -57,6 +58,48 @@ const PERSIAN_DATE_FORMATTER =
   );
 
 
+const PERSIAN_DATE_KEY_FORMATTER =
+  new Intl.DateTimeFormat(
+    "en-US-u-ca-persian",
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }
+  );
+
+
+// منبع: تقویم رسمی ۱۴۰۵ مرکز تقویم دانشگاه تهران
+const OFFICIAL_HOLIDAYS = {
+  "1405-01-01": "عید سعید فطر و آغاز نوروز",
+  "1405-01-02": "تعطیل عید سعید فطر و عید نوروز",
+  "1405-01-03": "عید نوروز",
+  "1405-01-04": "عید نوروز",
+  "1405-01-12": "روز جمهوری اسلامی ایران",
+  "1405-01-13": "روز طبیعت",
+  "1405-01-25": "شهادت امام جعفر صادق (ع)",
+  "1405-03-06": "عید سعید قربان",
+  "1405-03-14": "عید سعید غدیر خم و رحلت امام خمینی (ره)",
+  "1405-03-15": "قیام پانزده خرداد",
+  "1405-04-03": "تاسوعای حسینی",
+  "1405-04-04": "عاشورای حسینی",
+  "1405-05-13": "اربعین حسینی",
+  "1405-05-21": "رحلت پیامبر اکرم (ص) و شهادت امام حسن مجتبی (ع)",
+  "1405-05-22": "شهادت امام رضا (ع)",
+  "1405-05-30": "شهادت امام حسن عسکری (ع)",
+  "1405-06-08": "ولادت پیامبر اکرم (ص) و امام جعفر صادق (ع)",
+  "1405-08-22": "شهادت حضرت فاطمه زهرا (س)",
+  "1405-10-02": "ولادت امام علی (ع) و روز پدر",
+  "1405-10-16": "مبعث پیامبر اکرم (ص)",
+  "1405-11-04": "ولادت حضرت قائم (عج)",
+  "1405-11-22": "پیروزی انقلاب اسلامی ایران",
+  "1405-12-09": "شهادت امام علی (ع)",
+  "1405-12-19": "عید سعید فطر",
+  "1405-12-20": "تعطیل عید سعید فطر",
+  "1405-12-29": "ملی شدن صنعت نفت ایران",
+};
+
+
 function toLocalIsoDate(date) {
   const year = date.getFullYear();
   const month = String(
@@ -84,10 +127,54 @@ function parseLocalDate(value) {
 }
 
 
-function formatPersianDate(value) {
-  return PERSIAN_DATE_FORMATTER.format(
-    parseLocalDate(value)
+function partsToObject(formatter, date) {
+  return formatter
+    .formatToParts(date)
+    .reduce((result, part) => {
+      if (part.type !== "literal") {
+        result[part.type] = part.value;
+      }
+
+      return result;
+    }, {});
+}
+
+
+function getPersianDateMeta(value) {
+  const date = parseLocalDate(value);
+  const displayParts = partsToObject(
+    PERSIAN_DATE_FORMATTER,
+    date,
   );
+  const keyParts = partsToObject(
+    PERSIAN_DATE_KEY_FORMATTER,
+    date,
+  );
+  const dateKey = [
+    keyParts.year,
+    keyParts.month,
+    keyParts.day,
+  ].join("-");
+  const officialHoliday =
+    OFFICIAL_HOLIDAYS[dateKey] || "";
+  const isFriday = date.getDay() === 5;
+
+  return {
+    label:
+      `${displayParts.weekday}، `
+      + `${displayParts.day} `
+      + `${displayParts.month} `
+      + displayParts.year,
+    officialHoliday,
+    isFriday,
+    isHoliday:
+      isFriday || Boolean(officialHoliday),
+  };
+}
+
+
+function formatPersianDate(value) {
+  return getPersianDateMeta(value).label;
 }
 
 
@@ -105,7 +192,8 @@ function createDateOptions() {
 
       return {
         value,
-        label: formatPersianDate(value),
+        ...getPersianDateMeta(value),
+        isToday: index === 0,
       };
     }
   );
@@ -147,6 +235,183 @@ function TimeSelect({
         </option>
       ))}
     </select>
+  );
+}
+
+
+function PersianDateSelect({
+  options,
+  value,
+  onChange,
+  disabled,
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+  const selectedOptionRef = useRef(null);
+
+  const selectedOption =
+    options.find((option) => option.value === value)
+    || options[0];
+
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (
+        !containerRef.current?.contains(
+          event.target
+        )
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener(
+      "pointerdown",
+      closeOnOutsideClick,
+    );
+    document.addEventListener(
+      "keydown",
+      closeOnEscape,
+    );
+
+    const frameId = window.requestAnimationFrame(
+      () => {
+        selectedOptionRef.current?.scrollIntoView({
+          block: "nearest",
+        });
+      }
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        closeOnOutsideClick,
+      );
+      document.removeEventListener(
+        "keydown",
+        closeOnEscape,
+      );
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isOpen]);
+
+
+  const chooseDate = (date) => {
+    onChange(date);
+    setIsOpen(false);
+  };
+
+
+  return (
+    <div
+      className={`persian-date-select ${
+        isOpen ? "open" : ""
+      } ${
+        selectedOption?.isHoliday
+          ? "holiday"
+          : ""
+      }`}
+      ref={containerRef}
+    >
+      <button
+        type="button"
+        className="persian-date-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        disabled={disabled}
+        onClick={() => setIsOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (
+            event.key === "ArrowDown"
+            || event.key === "ArrowUp"
+          ) {
+            event.preventDefault();
+            setIsOpen(true);
+          }
+        }}
+      >
+        <span className="persian-date-value">
+          <strong>{selectedOption?.label}</strong>
+
+          {selectedOption?.isHoliday && (
+            <small>
+              {selectedOption.officialHoliday
+                ? `تعطیل رسمی · ${selectedOption.officialHoliday}`
+                : "تعطیل هفتگی"}
+            </small>
+          )}
+        </span>
+
+        <svg
+          className="persian-date-chevron"
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+        >
+          <path d="m5 7.5 5 5 5-5" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div
+          className="persian-date-options"
+          role="listbox"
+          aria-label="تاریخ‌های پیش رو"
+        >
+          {options.map((option) => {
+            const isSelected =
+              option.value === value;
+
+            return (
+              <button
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={`persian-date-option ${
+                  isSelected ? "selected" : ""
+                } ${
+                  option.isHoliday ? "holiday" : ""
+                }`}
+                ref={
+                  isSelected
+                    ? selectedOptionRef
+                    : undefined
+                }
+                key={option.value}
+                onClick={() =>
+                  chooseDate(option.value)
+                }
+              >
+                <span className="date-option-copy">
+                  <strong>{option.label}</strong>
+
+                  {option.isHoliday && (
+                    <small>
+                      {option.officialHoliday
+                        ? `تعطیل رسمی · ${option.officialHoliday}`
+                        : "تعطیل هفتگی"}
+                    </small>
+                  )}
+                </span>
+
+                {option.isToday && (
+                  <span className="date-option-today">
+                    امروز
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -643,28 +908,26 @@ function AvailabilityManager({
               </p>
             </div>
 
-            <label className="availability-field">
+            <div className="availability-field">
               <span>تاریخ شمسی</span>
-              <select
+
+              <PersianDateSelect
+                options={dateOptions}
                 value={exceptionForm.date}
                 disabled={Boolean(savingKey)}
-                onChange={(event) =>
+                onChange={(date) =>
                   setExceptionForm((current) => ({
                     ...current,
-                    date: event.target.value,
+                    date,
                   }))
                 }
-              >
-                {dateOptions.map((option) => (
-                  <option
-                    value={option.value}
-                    key={option.value}
-                  >
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              />
+
+              <small className="date-field-note">
+                <i />
+                روزهای قرمز فقط نشانگر تعطیلی تقویم‌اند.
+              </small>
+            </div>
 
             <label className="full-day-check">
               <div>
