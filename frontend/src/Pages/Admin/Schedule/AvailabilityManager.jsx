@@ -166,6 +166,7 @@ function getPersianDateMeta(value) {
       + `${displayParts.month} `
       + displayParts.year,
     officialHoliday,
+    persianYear: keyParts.year,
     isFriday,
     isHoliday:
       isFriday || Boolean(officialHoliday),
@@ -182,21 +183,37 @@ function createDateOptions() {
   const today = new Date();
   today.setHours(12, 0, 0, 0);
 
-  return Array.from(
-    { length: 180 },
-    (_, index) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() + index);
+  const firstValue = toLocalIsoDate(today);
+  const currentPersianYear =
+    getPersianDateMeta(firstValue).persianYear;
+  const options = [];
 
-      const value = toLocalIsoDate(date);
+  for (
+    let index = 0;
+    index < 370;
+    index += 1
+  ) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + index);
 
-      return {
-        value,
-        ...getPersianDateMeta(value),
-        isToday: index === 0,
-      };
+    const value = toLocalIsoDate(date);
+    const dateMeta = getPersianDateMeta(value);
+
+    if (
+      dateMeta.persianYear
+      !== currentPersianYear
+    ) {
+      break;
     }
-  );
+
+    options.push({
+      value,
+      ...dateMeta,
+      isToday: index === 0,
+    });
+  }
+
+  return options;
 }
 
 
