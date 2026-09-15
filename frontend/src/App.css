@@ -27,6 +27,15 @@
   text-decoration: none !important;
 }
 
+
+.floating-register-btn,
+.floating-logout-btn {
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  line-height: 1.5 !important;
+}
+
 .floating-register-btn:hover {
   transform: translateY(-4px) !important;
   box-shadow: 0 12px 30px rgba(56, 189, 248, 0.4) !important;
