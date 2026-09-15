@@ -256,51 +256,76 @@
    ACCOUNT LOGOUT
 ========================= */
 
-.navbar-desktop-logout {
-  min-width: 70px;
-  height: 38px;
+.floating-logout-btn {
+  position: fixed;
+  left: 30px;
+  bottom: 30px;
+
+  z-index: 99999;
+
+  min-height: 50px;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 9px;
 
-  margin-inline-start: 2px;
-  padding: 0 12px;
+  padding: 14px 24px;
 
-  color: rgba(254, 202, 202, 0.9);
-  background: rgba(127, 29, 29, 0.08);
+  color: #fecdd3;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(76, 25, 43, 0.96),
+      rgba(42, 24, 39, 0.96)
+    );
 
-  border: 1px solid rgba(251, 113, 133, 0.25);
-  border-radius: 999px;
+  border: 1px solid rgba(251, 113, 133, 0.5);
+  border-radius: 30px;
 
   font: inherit;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
 
   cursor: pointer;
 
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 22px rgba(244, 63, 94, 0.08);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
   transition:
-    color 180ms ease,
-    background 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease;
+    color 0.3s ease,
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
 }
 
-.navbar-desktop-logout:hover {
+.floating-logout-btn:hover {
   color: #ffffff;
-  background: rgba(190, 24, 93, 0.13);
-  border-color: rgba(251, 113, 133, 0.48);
-  transform: translateY(-1px);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(101, 31, 52, 0.98),
+      rgba(64, 27, 45, 0.98)
+    );
+  border-color: rgba(251, 113, 133, 0.78);
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.34),
+    0 0 26px rgba(244, 63, 94, 0.14);
+  transform: translateY(-4px);
 }
 
-.navbar-desktop-logout:focus-visible,
+.floating-logout-btn:focus-visible,
 .navbar-mobile-logout:focus-visible {
   outline: 2px solid rgba(56, 189, 248, 0.85);
   outline-offset: 3px;
 }
 
-.navbar-desktop-logout:disabled,
+.floating-logout-btn:disabled,
 .navbar-mobile-logout:disabled {
   opacity: 0.58;
   cursor: wait;
@@ -308,7 +333,7 @@
 }
 
 .navbar-logout-icon {
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -353,17 +378,6 @@
     height: 52px;
   }
 
-  .navbar-desktop-logout {
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    gap: 0;
-    padding: 0;
-  }
-
-  .navbar-desktop-logout-label {
-    display: none;
-  }
 }
 
 
@@ -372,6 +386,10 @@
 ========================= */
 
 @media (max-width: 650px) {
+
+  .floating-logout-btn {
+    display: none;
+  }
 
   .navbar {
     justify-content: center;
