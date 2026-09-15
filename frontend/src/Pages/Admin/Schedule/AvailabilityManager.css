@@ -19,6 +19,11 @@
   font-synthesis: none;
 }
 
+.availability-manager:has(.persian-date-select.open) {
+  overflow: visible;
+  z-index: 20;
+}
+
 .availability-manager::before {
   content: "";
   position: absolute;
