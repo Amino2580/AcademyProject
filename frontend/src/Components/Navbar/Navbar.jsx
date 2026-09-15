@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Link,
   useLocation,
@@ -154,194 +155,194 @@ function Navbar() {
 
 
   return (
-    <>
-      <header className="navbar-wrapper">
-        <nav className="navbar">
-          <div className="navbar-side navbar-right">
-            {rightMenuItems.map(
-              (item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={
-                    getLinkClassName(
-                      item.path
-                    )
-                  }
-                >
-                  {item.title}
-                </Link>
-              )
-            )}
-  
-          </div>
-  
-          <Link
-            to="/"
-            className="navbar-logo"
-          >
-            <img
-              src={mt}
-              alt="Milad Tarighat"
-            />
-          </Link>
-  
-          <div className="navbar-side navbar-left">
-            {leftMenuItems.map(
-              (item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={
-                    getLinkClassName(
-                      item.path
-                    )
-                  }
-                >
-                  {item.title}
-                </Link>
-              )
-            )}
-          </div>
-  
-          <button
-            type="button"
-            className={
-              `navbar-mobile-toggle ${
-                isMobileMenuOpen
-                  ? "open"
-                  : ""
-              }`
-            }
-            aria-label={
+    <header className="navbar-wrapper">
+      <nav className="navbar">
+        <div className="navbar-side navbar-right">
+          {rightMenuItems.map(
+            (item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={
+                  getLinkClassName(
+                    item.path
+                  )
+                }
+              >
+                {item.title}
+              </Link>
+            )
+          )}
+
+        </div>
+
+        <Link
+          to="/"
+          className="navbar-logo"
+        >
+          <img
+            src={mt}
+            alt="Milad Tarighat"
+          />
+        </Link>
+
+        <div className="navbar-side navbar-left">
+          {leftMenuItems.map(
+            (item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={
+                  getLinkClassName(
+                    item.path
+                  )
+                }
+              >
+                {item.title}
+              </Link>
+            )
+          )}
+        </div>
+
+        <button
+          type="button"
+          className={
+            `navbar-mobile-toggle ${
               isMobileMenuOpen
-                ? "بستن منوی سایت"
-                : "باز کردن منوی سایت"
-            }
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="navbar-mobile-menu"
-            onClick={() =>
-              setIsMobileMenuOpen(
-                (isOpen) => !isOpen
+                ? "open"
+                : ""
+            }`
+          }
+          aria-label={
+            isMobileMenuOpen
+              ? "بستن منوی سایت"
+              : "باز کردن منوی سایت"
+          }
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="navbar-mobile-menu"
+          onClick={() =>
+            setIsMobileMenuOpen(
+              (isOpen) => !isOpen
+            )
+          }
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
+        <div
+          id="navbar-mobile-menu"
+          className={
+            `navbar-mobile-menu ${
+              isMobileMenuOpen
+                ? "open"
+                : ""
+            }`
+          }
+        >
+          <div className="navbar-mobile-links">
+            {mobileMenuItems.map(
+              (item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={
+                    getLinkClassName(
+                      item.path
+                    )
+                  }
+                  onClick={() =>
+                    setIsMobileMenuOpen(false)
+                  }
+                >
+                  {item.title}
+                </Link>
               )
-            }
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-  
-          <div
-            id="navbar-mobile-menu"
-            className={
-              `navbar-mobile-menu ${
-                isMobileMenuOpen
-                  ? "open"
-                  : ""
-              }`
-            }
-          >
-            <div className="navbar-mobile-links">
-              {mobileMenuItems.map(
+            )}
+          </div>
+
+          {authenticated && (
+            <button
+              type="button"
+              className="navbar-mobile-logout"
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+            >
+              <span aria-hidden="true">
+                ↪
+              </span>
+
+              {isLoggingOut
+                ? "در حال خروج..."
+                : "خروج از حساب"}
+            </button>
+          )}
+
+          <div className="navbar-mobile-socials">
+            <span className="navbar-mobile-socials-title">
+              ارتباط با استاد
+            </span>
+
+            <div>
+              {mobileSocialItems.map(
                 (item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={
-                      getLinkClassName(
-                        item.path
-                      )
+                  <a
+                    key={item.title}
+                    href={item.href}
+                    target={
+                      item.external
+                        ? "_blank"
+                        : undefined
+                    }
+                    rel={
+                      item.external
+                        ? "noreferrer"
+                        : undefined
                     }
                     onClick={() =>
                       setIsMobileMenuOpen(false)
                     }
                   >
-                    {item.title}
-                  </Link>
+                    <img
+                      src={item.icon}
+                      alt=""
+                    />
+                    <span>{item.title}</span>
+                  </a>
                 )
               )}
             </div>
-  
-            {authenticated && (
-              <button
-                type="button"
-                className="navbar-mobile-logout"
-                disabled={isLoggingOut}
-                onClick={handleLogout}
-              >
-                <span aria-hidden="true">
-                  ↪
-                </span>
-  
-                {isLoggingOut
-                  ? "در حال خروج..."
-                  : "خروج از حساب"}
-              </button>
-            )}
-  
-            <div className="navbar-mobile-socials">
-              <span className="navbar-mobile-socials-title">
-                ارتباط با استاد
-              </span>
-  
-              <div>
-                {mobileSocialItems.map(
-                  (item) => (
-                    <a
-                      key={item.title}
-                      href={item.href}
-                      target={
-                        item.external
-                          ? "_blank"
-                          : undefined
-                      }
-                      rel={
-                        item.external
-                          ? "noreferrer"
-                          : undefined
-                      }
-                      onClick={() =>
-                        setIsMobileMenuOpen(false)
-                      }
-                    >
-                      <img
-                        src={item.icon}
-                        alt=""
-                      />
-                      <span>{item.title}</span>
-                    </a>
-                  )
-                )}
-              </div>
-            </div>
           </div>
-        </nav>
-      </header>
+        </div>
+      </nav>
 
-      {authenticated && (
-        <button
-          type="button"
-          className="floating-logout-btn"
-          title="خروج از حساب"
-          aria-label="خروج از حساب"
-          disabled={isLoggingOut}
-          onClick={handleLogout}
-        >
-          <span
-            className="navbar-logout-icon"
-            aria-hidden="true"
+      {authenticated &&
+        createPortal(
+          <button
+            type="button"
+            className="floating-logout-btn"
+            title="خروج از حساب"
+            aria-label="خروج از حساب"
+            disabled={isLoggingOut}
+            onClick={handleLogout}
           >
-            ↪
-          </span>
+            <span
+              className="navbar-logout-icon"
+              aria-hidden="true"
+            >
+              ↪
+            </span>
 
-          <span>
-            {isLoggingOut
-              ? "در حال خروج..."
-              : "خروج از حساب"}
-          </span>
-        </button>
-      )}
-    </>
+            <span>
+              {isLoggingOut
+                ? "در حال خروج..."
+                : "خروج از حساب"}
+            </span>
+          </button>,
+          document.body
+        )}
+    </header>
   );
 }
 
