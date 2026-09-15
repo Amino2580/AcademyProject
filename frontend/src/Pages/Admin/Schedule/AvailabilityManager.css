@@ -19,11 +19,6 @@
   font-synthesis: none;
 }
 
-.availability-manager:has(.persian-date-select.open) {
-  overflow: visible;
-  z-index: 20;
-}
-
 .availability-manager::before {
   content: "";
   position: absolute;
@@ -349,10 +344,6 @@
   width: 100%;
 }
 
-.persian-date-select.open {
-  z-index: 40;
-}
-
 .persian-date-trigger {
   width: 100%;
   min-height: 50px;
@@ -382,8 +373,9 @@
 
 .persian-date-trigger:focus-visible,
 .persian-date-select.open .persian-date-trigger {
-  border-color: rgba(56, 189, 248, 0.58);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.08);
+  background: rgba(56, 189, 248, 0.055);
+  border-color: rgba(56, 189, 248, 0.48);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.065);
 }
 
 .persian-date-trigger:disabled {
@@ -444,44 +436,72 @@
 }
 
 .persian-date-options {
-  position: absolute;
-  z-index: 50;
-  top: calc(100% + 7px);
-  right: 0;
-  left: 0;
-  max-height: 300px;
-  padding: 6px;
+  position: relative;
+  width: 100%;
+  max-height: 260px;
+  margin-top: 8px;
+  padding: 5px;
   overflow-y: auto;
-  background: #0d1d33;
-  border: 1px solid rgba(56, 189, 248, 0.24);
-  border-radius: 13px;
-  box-shadow: 0 20px 48px rgba(2, 8, 23, 0.52);
+  overscroll-behavior: contain;
+  background: rgba(5, 18, 35, 0.52);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 11px;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.025),
+    0 10px 28px rgba(2, 8, 23, 0.16);
+  animation: date-options-enter 150ms ease-out;
   scrollbar-color:
-    rgba(56, 189, 248, 0.32)
+    rgba(148, 163, 184, 0.28)
     transparent;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
+}
+
+.persian-date-options::-webkit-scrollbar {
+  width: 5px;
+}
+
+.persian-date-options::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.persian-date-options::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.26);
+  border-radius: 999px;
+}
+
+@keyframes date-options-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .persian-date-option {
   width: 100%;
-  min-height: 47px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 10px;
+  padding: 7px 11px;
   color: #e2e8f0;
   text-align: right;
   background: transparent;
-  border: 0;
-  border-radius: 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   outline: none;
   font-family: inherit;
   cursor: pointer;
   transition:
     color 150ms ease,
     background 150ms ease,
-    box-shadow 150ms ease;
+    border-color 150ms ease;
 }
 
 .persian-date-option + .persian-date-option {
@@ -491,32 +511,36 @@
 .persian-date-option:hover,
 .persian-date-option:focus-visible {
   color: #ffffff;
-  background: rgba(56, 189, 248, 0.075);
+  background: rgba(56, 189, 248, 0.055);
+  border-color: rgba(56, 189, 248, 0.08);
 }
 
 .persian-date-option.selected {
   color: #e0f2fe;
-  background: rgba(14, 165, 233, 0.12);
-  box-shadow:
-    inset -2px 0 rgba(56, 189, 248, 0.7);
+  background: rgba(14, 165, 233, 0.09);
+  border-color: rgba(56, 189, 248, 0.16);
 }
 
 .persian-date-option.holiday {
   color: #e9a2ad;
-  background: rgba(190, 24, 93, 0.035);
+  background: rgba(190, 24, 93, 0.018);
+  box-shadow:
+    inset -2px 0 rgba(217, 142, 153, 0.32);
 }
 
 .persian-date-option.holiday:hover,
 .persian-date-option.holiday:focus-visible {
-  color: #f4b4bd;
-  background: rgba(190, 24, 93, 0.075);
+  color: #f1b0b9;
+  background: rgba(190, 24, 93, 0.05);
+  border-color: rgba(217, 142, 153, 0.1);
 }
 
 .persian-date-option.holiday.selected {
-  color: #f4b4bd;
-  background: rgba(190, 24, 93, 0.085);
+  color: #f1b0b9;
+  background: rgba(190, 24, 93, 0.065);
+  border-color: rgba(217, 142, 153, 0.14);
   box-shadow:
-    inset -2px 0 rgba(225, 112, 128, 0.68);
+    inset -2px 0 rgba(217, 142, 153, 0.48);
 }
 
 .date-option-copy {
@@ -536,7 +560,7 @@
 
 .date-option-copy small {
   margin-top: 1px;
-  color: rgba(233, 162, 173, 0.72);
+  color: rgba(233, 162, 173, 0.7);
   font-size: 9px;
   font-weight: 400;
   line-height: 1.6;
@@ -546,8 +570,8 @@
   flex: 0 0 auto;
   padding: 3px 7px;
   color: #bae6fd;
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.15);
   border-radius: 999px;
   font-size: 8px;
   font-weight: 500;
@@ -570,7 +594,7 @@
   flex: 0 0 auto;
   background: #d98e99;
   border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(217, 142, 153, 0.08);
+  box-shadow: 0 0 0 3px rgba(217, 142, 153, 0.07);
 }
 
 .save-day-button {
@@ -1026,11 +1050,11 @@
   }
 
   .persian-date-options {
-    max-height: min(310px, 48svh);
+    max-height: min(250px, 42svh);
   }
 
   .persian-date-option {
-    min-height: 49px;
+    min-height: 46px;
   }
 
   .persian-date-value strong,
