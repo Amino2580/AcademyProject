@@ -339,6 +339,235 @@
   background: #0f1e34;
 }
 
+.persian-date-select {
+  position: relative;
+  width: 100%;
+}
+
+.persian-date-select.open {
+  z-index: 40;
+}
+
+.persian-date-trigger {
+  width: 100%;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 13px;
+  color: #f8fafc;
+  text-align: right;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.17);
+  border-radius: 11px;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.persian-date-trigger:hover {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: rgba(148, 163, 184, 0.27);
+}
+
+.persian-date-trigger:focus-visible,
+.persian-date-select.open .persian-date-trigger {
+  border-color: rgba(56, 189, 248, 0.58);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.08);
+}
+
+.persian-date-trigger:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.persian-date-value {
+  min-width: 0;
+}
+
+.persian-date-value strong,
+.persian-date-value small {
+  display: block;
+}
+
+.persian-date-value strong {
+  color: #f1f5f9;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.persian-date-value small {
+  margin-top: 1px;
+  overflow: hidden;
+  color: rgba(226, 232, 240, 0.57);
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.persian-date-select.holiday
+.persian-date-value strong,
+.persian-date-select.holiday
+.persian-date-value small {
+  color: #e9a2ad;
+}
+
+.persian-date-chevron {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  color: rgba(186, 230, 253, 0.68);
+  transition: transform 180ms ease;
+}
+
+.persian-date-select.open
+.persian-date-chevron {
+  transform: rotate(180deg);
+}
+
+.persian-date-options {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 7px);
+  right: 0;
+  left: 0;
+  max-height: 300px;
+  padding: 6px;
+  overflow-y: auto;
+  background: #0d1d33;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 13px;
+  box-shadow: 0 20px 48px rgba(2, 8, 23, 0.52);
+  scrollbar-color:
+    rgba(56, 189, 248, 0.32)
+    transparent;
+  scrollbar-width: thin;
+}
+
+.persian-date-option {
+  width: 100%;
+  min-height: 47px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  color: #e2e8f0;
+  text-align: right;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.persian-date-option + .persian-date-option {
+  margin-top: 2px;
+}
+
+.persian-date-option:hover,
+.persian-date-option:focus-visible {
+  color: #ffffff;
+  background: rgba(56, 189, 248, 0.075);
+}
+
+.persian-date-option.selected {
+  color: #e0f2fe;
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow:
+    inset -2px 0 rgba(56, 189, 248, 0.7);
+}
+
+.persian-date-option.holiday {
+  color: #e9a2ad;
+  background: rgba(190, 24, 93, 0.035);
+}
+
+.persian-date-option.holiday:hover,
+.persian-date-option.holiday:focus-visible {
+  color: #f4b4bd;
+  background: rgba(190, 24, 93, 0.075);
+}
+
+.persian-date-option.holiday.selected {
+  color: #f4b4bd;
+  background: rgba(190, 24, 93, 0.085);
+  box-shadow:
+    inset -2px 0 rgba(225, 112, 128, 0.68);
+}
+
+.date-option-copy {
+  min-width: 0;
+}
+
+.date-option-copy strong,
+.date-option-copy small {
+  display: block;
+}
+
+.date-option-copy strong {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.date-option-copy small {
+  margin-top: 1px;
+  color: rgba(233, 162, 173, 0.72);
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.date-option-today {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  color: #bae6fd;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.date-field-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(226, 232, 240, 0.48);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.date-field-note i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  background: #d98e99;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(217, 142, 153, 0.08);
+}
+
 .save-day-button {
   height: 42px;
   padding: 0 13px;
@@ -785,6 +1014,23 @@
 
   .exception-item > button {
     min-height: 42px;
+  }
+
+  .persian-date-trigger {
+    min-height: 50px;
+  }
+
+  .persian-date-options {
+    max-height: min(310px, 48svh);
+  }
+
+  .persian-date-option {
+    min-height: 49px;
+  }
+
+  .persian-date-value strong,
+  .date-option-copy strong {
+    font-size: 11px;
   }
 }
 
