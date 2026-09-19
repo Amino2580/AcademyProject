@@ -10,8 +10,10 @@ from django.utils import timezone
 from .models import (
     AvailabilityException,
     ClassBooking,
+    ClassOffering,
     ClassSession,
     WeeklyAvailability,
+    default_end_time,
 )
 
 
@@ -88,37 +90,45 @@ def get_day_for_date(
     )
 
 
-def is_time_in_ranges(
-    slot_time,
-    ranges,
+def intervals_overlap(
+    first_start,
+    first_end,
+    second_start,
+    second_end,
 ):
-    return any(
-        start_time
-        <= slot_time
-        < end_time
-        for (
-            start_time,
-            end_time,
-        ) in ranges
+    return (
+        first_start < second_end
+        and first_end > second_start
     )
 
 
-def is_time_blocked_by_exception(
-    slot_time,
+def is_interval_in_ranges(
+    start_time,
+    end_time,
+    ranges,
+):
+    return any(
+        range_start <= start_time
+        and range_end >= end_time
+        for range_start, range_end in ranges
+    )
+
+
+def is_interval_blocked_by_exception(
+    start_time,
+    end_time,
     exceptions,
 ):
-    for exception in exceptions:
-        if exception.is_full_day:
-            return True
-
-        if (
-            exception.start_time
-            <= slot_time
-            < exception.end_time
-        ):
-            return True
-
-    return False
+    return any(
+        exception.is_full_day
+        or intervals_overlap(
+            start_time,
+            end_time,
+            exception.start_time,
+            exception.end_time,
+        )
+        for exception in exceptions
+    )
 
 
 def get_public_unavailable_slots(
@@ -141,27 +151,37 @@ def get_public_unavailable_slots(
             )
         )
 
-    booked_session_slots = set(
-        ClassSession.objects.filter(
+    sessions = list(
+        ClassSession.objects
+        .select_related(
+            "booking",
+            "booking__offering",
+        )
+        .filter(
             date__gte=week_start,
             date__lte=(
                 week_start
                 + timedelta(days=6)
             ),
-        ).values_list(
-            "date",
-            "start_time",
         )
     )
 
-    legacy_booked_slots = set(
+    legacy_bookings = list(
         ClassBooking.objects.filter(
             enrollment__isnull=True,
-        ).values_list(
-            "day",
-            "start_time",
         )
     )
+
+    offerings_by_day = defaultdict(list)
+
+    for offering in (
+        ClassOffering.objects.filter(
+            is_active=True
+        )
+    ):
+        offerings_by_day[offering.day].append(
+            offering
+        )
 
     week_end = (
         week_start
@@ -196,32 +216,176 @@ def get_public_unavailable_slots(
         )
 
         for slot_time in TIME_SLOTS:
-            is_booked = (
-                (
-                    slot_date,
-                    slot_time,
-                ) in booked_session_slots
-                or (
-                    day,
-                    slot_time,
-                ) in legacy_booked_slots
+            slot_end_time = default_end_time(
+                slot_time
             )
 
-            is_inside_working_hours = (
-                is_time_in_ranges(
+            starting_offering = next(
+                (
+                    offering
+                    for offering in offerings_by_day[day]
+                    if offering.start_time == slot_time
+                ),
+                None,
+            )
+
+            covering_offering = next(
+                (
+                    offering
+                    for offering in offerings_by_day[day]
+                    if (
+                        offering.start_time < slot_time
+                        < offering.end_time
+                    )
+                ),
+                None,
+            )
+
+            relevant_end_time = (
+                starting_offering.end_time
+                if starting_offering
+                else slot_end_time
+            )
+
+            direct_sessions = [
+                session
+                for session in sessions
+                if (
+                    session.date == slot_date
+                    and session.booking.offering_id
+                    is None
+                    and intervals_overlap(
+                        slot_time,
+                        slot_end_time,
+                        session.start_time,
+                        session.end_time,
+                    )
+                )
+            ]
+
+            legacy_is_booked = any(
+                booking.day == day
+                and intervals_overlap(
                     slot_time,
+                    slot_end_time,
+                    booking.start_time,
+                    booking.end_time,
+                )
+                for booking in legacy_bookings
+            )
+
+            is_booked = bool(
+                direct_sessions
+            ) or legacy_is_booked
+
+            is_inside_working_hours = (
+                is_interval_in_ranges(
+                    slot_time,
+                    relevant_end_time,
                     weekly_ranges[day],
                 )
             )
 
             is_exception = (
-                is_time_blocked_by_exception(
+                is_interval_blocked_by_exception(
                     slot_time,
+                    relevant_end_time,
                     exceptions_by_date[
                         slot_date
                     ],
                 )
             )
+
+            if starting_offering is not None:
+                booked_count = len({
+                    session.booking_id
+                    for session in sessions
+                    if (
+                        session.date == slot_date
+                        and session.booking.offering_id
+                        == starting_offering.id
+                    )
+                })
+
+                is_full = (
+                    booked_count
+                    >= starting_offering.capacity
+                )
+
+                unavailable_slots.append(
+                    {
+                        "day": day,
+                        "dayLabel": DAY_LABELS[day],
+                        "startTime": slot_time.strftime(
+                            "%H:%M"
+                        ),
+                        "endTime": (
+                            starting_offering.end_time
+                            .strftime("%H:%M")
+                        ),
+                        "isBooked": is_full,
+                        "status": (
+                            "closed"
+                            if (
+                                is_exception
+                                or not is_inside_working_hours
+                            )
+                            else (
+                                "booked"
+                                if is_full
+                                else "offering"
+                            )
+                        ),
+                        "offeringId": (
+                            starting_offering.id
+                        ),
+                        "classType": (
+                            starting_offering.class_type
+                        ),
+                        "classTypeLabel": (
+                            starting_offering
+                            .get_class_type_display()
+                        ),
+                        "capacity": (
+                            starting_offering.capacity
+                        ),
+                        "bookedCount": booked_count,
+                        "remainingCapacity": max(
+                            0,
+                            starting_offering.capacity
+                            - booked_count,
+                        ),
+                    }
+                )
+                continue
+
+            if covering_offering is not None:
+                unavailable_slots.append(
+                    {
+                        "day": day,
+                        "dayLabel": DAY_LABELS[day],
+                        "startTime": slot_time.strftime(
+                            "%H:%M"
+                        ),
+                        "endTime": (
+                            covering_offering.end_time
+                            .strftime("%H:%M")
+                        ),
+                        "isBooked": False,
+                        "status": "continuation",
+                        "offeringId": (
+                            covering_offering.id
+                        ),
+                        "classType": (
+                            covering_offering.class_type
+                        ),
+                        "classTypeLabel": (
+                            covering_offering
+                            .get_class_type_display()
+                        ),
+                    }
+                )
+                continue
 
             if (
                 not is_booked
@@ -249,6 +413,15 @@ def get_public_unavailable_slots(
                         if is_booked
                         else "closed"
                     ),
+                    "endTime": (
+                        slot_end_time.strftime("%H:%M")
+                    ),
+                    "classType": (
+                        ClassBooking.ClassType.PRIVATE
+                    ),
+                    "classTypeLabel": (
+                        ClassBooking.ClassType.PRIVATE.label
+                    ),
                 }
             )
 
@@ -259,23 +432,59 @@ def is_slot_available(
     day,
     slot_time,
     requested_date=None,
+    end_time=None,
+    offering=None,
 ):
+    if end_time is None:
+        end_time = default_end_time(slot_time)
+
     if (
         day not in DAY_SEQUENCE
         or slot_time not in TIME_SLOTS
+        or end_time is None
+        or end_time <= slot_time
     ):
+        return False
+
+    if offering is not None and (
+        not offering.is_active
+        or offering.day != day
+        or offering.start_time != slot_time
+        or offering.end_time != end_time
+    ):
+        return False
+
+    conflicting_offerings = (
+        ClassOffering.objects.filter(
+            is_active=True,
+            day=day,
+            start_time__lt=end_time,
+            end_time__gt=slot_time,
+        )
+    )
+
+    if offering is not None:
+        conflicting_offerings = (
+            conflicting_offerings.exclude(
+                pk=offering.pk
+            )
+        )
+
+    if conflicting_offerings.exists():
         return False
 
     if ClassBooking.objects.filter(
         enrollment__isnull=True,
         day=day,
-        start_time=slot_time,
+        start_time__lt=end_time,
+        end_time__gt=slot_time,
     ).exists():
         return False
 
     sessions = ClassSession.objects.filter(
         booking__day=day,
-        start_time=slot_time,
+        start_time__lt=end_time,
+        end_time__gt=slot_time,
     )
 
     if requested_date is None:
@@ -287,14 +496,33 @@ def is_slot_available(
             date=requested_date
         )
 
-    if sessions.exists():
-        return False
+    if offering is None:
+        if sessions.exists():
+            return False
+    else:
+        if sessions.exclude(
+            booking__offering=offering
+        ).exists():
+            return False
+
+        if requested_date is not None:
+            occupied_places = (
+                sessions.filter(
+                    booking__offering=offering
+                )
+                .values("booking_id")
+                .distinct()
+                .count()
+            )
+
+            if occupied_places >= offering.capacity:
+                return False
 
     is_inside_working_hours = (
         WeeklyAvailability.objects.filter(
             day=day,
             start_time__lte=slot_time,
-            end_time__gt=slot_time,
+            end_time__gte=end_time,
         ).exists()
     )
 
@@ -323,7 +551,7 @@ def is_slot_available(
                 end_time__isnull=True,
             )
             | Q(
-                start_time__lte=slot_time,
+                start_time__lt=end_time,
                 end_time__gt=slot_time,
             )
         )

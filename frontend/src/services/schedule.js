@@ -108,6 +108,56 @@ export function deleteWeeklyAvailability(
 }
 
 
+export function getClassOfferings() {
+  return apiRequest(
+    "/api/admin/schedule/offerings/"
+  );
+}
+
+
+export function createClassOffering(
+  offeringData
+) {
+  return apiRequest(
+    "/api/admin/schedule/offerings/",
+    {
+      method: "POST",
+      body: offeringData,
+    }
+  );
+}
+
+
+export function updateClassOffering(
+  offeringId,
+  offeringData
+) {
+  return apiRequest(
+    `/api/admin/schedule/offerings/${
+      offeringId
+    }/`,
+    {
+      method: "PATCH",
+      body: offeringData,
+    }
+  );
+}
+
+
+export function deleteClassOffering(
+  offeringId
+) {
+  return apiRequest(
+    `/api/admin/schedule/offerings/${
+      offeringId
+    }/`,
+    {
+      method: "DELETE",
+    }
+  );
+}
+
+
 export function getAvailabilityExceptions() {
   return apiRequest(
     "/api/admin/schedule/exceptions/"

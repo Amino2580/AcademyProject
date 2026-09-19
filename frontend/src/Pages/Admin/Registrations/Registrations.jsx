@@ -222,7 +222,7 @@ function Registrations() {
                       </td>
 
                       <td>
-                        {request.classType || "—"}
+                        {request.classTypeLabel || "—"}
                       </td>
 
                       <td>
@@ -237,6 +237,9 @@ function Registrations() {
 
                             <small dir="ltr">
                               {request.preferredTime}
+                              {request.preferredEndTime && (
+                                <> تا {request.preferredEndTime}</>
+                              )}
                             </small>
                           </span>
                         ) : (

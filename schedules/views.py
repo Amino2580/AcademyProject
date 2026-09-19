@@ -67,6 +67,7 @@ class ClassBookingAdminListCreateView(
         "student_name",
         "phone",
         "instrument",
+        "class_type",
         "notes",
     ]
 
@@ -88,6 +89,7 @@ class ClassBookingAdminListCreateView(
             .select_related(
                 "student",
                 "enrollment",
+                "offering",
             )
         )
 
@@ -275,6 +277,7 @@ class MyScheduleListView(
                 "booking",
                 "booking__student",
                 "booking__enrollment",
+                "booking__offering",
                 "availability_exception",
             )
             .filter(

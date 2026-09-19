@@ -8,11 +8,15 @@ import {
 
 import {
   createAvailabilityException,
+  createClassOffering,
   createWeeklyAvailability,
   deleteAvailabilityException,
+  deleteClassOffering,
   deleteWeeklyAvailability,
   getAvailabilityExceptions,
+  getClassOfferings,
   getWeeklyAvailability,
+  updateClassOffering,
   updateWeeklyAvailability,
 } from "../../../services/schedule";
 
@@ -44,6 +48,33 @@ const TIME_OPTIONS = Array.from(
     return `${hour}:${minute}`;
   }
 );
+
+
+const CLASS_TYPES = [
+  {
+    value: "private",
+    label: "کلاس خصوصی",
+  },
+  {
+    value: "group",
+    label: "کلاس گروهی",
+  },
+  {
+    value: "online",
+    label: "کلاس آنلاین",
+  },
+];
+
+
+const INITIAL_OFFERING_FORM = {
+  id: null,
+  day: "saturday",
+  classType: "private",
+  startTime: "09:00",
+  endTime: "09:30",
+  capacity: 1,
+  isActive: true,
+};
 
 
 const PERSIAN_DATE_FORMATTER =
@@ -447,6 +478,8 @@ function AvailabilityManager({
     useState([]);
   const [exceptions, setExceptions] =
     useState([]);
+  const [offerings, setOfferings] =
+    useState([]);
   const [loading, setLoading] =
     useState(true);
   const [savingKey, setSavingKey] =
@@ -465,13 +498,21 @@ function AvailabilityManager({
       reason: "",
     }));
 
+  const [offeringForm, setOfferingForm] =
+    useState(INITIAL_OFFERING_FORM);
+
 
   const refreshData = useCallback(
     async () => {
-      const [weeklyData, exceptionData] =
+      const [
+        weeklyData,
+        exceptionData,
+        offeringData,
+      ] =
         await Promise.all([
           getWeeklyAvailability(),
           getAvailabilityExceptions(),
+          getClassOfferings(),
         ]);
 
       setWeeklyRanges(
@@ -479,6 +520,9 @@ function AvailabilityManager({
       );
       setExceptions(
         normalizeList(exceptionData)
+      );
+      setOfferings(
+        normalizeList(offeringData)
       );
     },
     []
@@ -654,6 +698,130 @@ function AvailabilityManager({
   };
 
 
+  const resetOfferingForm = () => {
+    setOfferingForm(INITIAL_OFFERING_FORM);
+  };
+
+
+  const changeOfferingField = (
+    field,
+    value,
+  ) => {
+    setOfferingForm((current) => {
+      const nextForm = {
+        ...current,
+        [field]: value,
+      };
+
+      if (
+        field === "classType"
+        && value === "private"
+      ) {
+        nextForm.capacity = 1;
+      }
+
+      if (
+        field === "classType"
+        && value === "group"
+        && Number(current.capacity) < 2
+      ) {
+        nextForm.capacity = 2;
+      }
+
+      return nextForm;
+    });
+    setError("");
+    setSuccess("");
+  };
+
+
+  const submitOffering = async (event) => {
+    event.preventDefault();
+
+    if (
+      offeringForm.startTime
+      >= offeringForm.endTime
+    ) {
+      setError(
+        "ساعت پایان باید بعد از ساعت شروع باشد."
+      );
+      return;
+    }
+
+    const payload = {
+      day: offeringForm.day,
+      classType: offeringForm.classType,
+      startTime: offeringForm.startTime,
+      endTime: offeringForm.endTime,
+      capacity: Number(offeringForm.capacity),
+      isActive: offeringForm.isActive,
+    };
+
+    const isEditing = Boolean(offeringForm.id);
+    const saved = await runAction({
+      key: isEditing
+        ? `offering-${offeringForm.id}`
+        : "new-offering",
+      action: () =>
+        isEditing
+          ? updateClassOffering(
+              offeringForm.id,
+              payload,
+            )
+          : createClassOffering(payload),
+      successMessage: isEditing
+        ? "برنامهٔ کلاس ویرایش شد."
+        : "برنامهٔ کلاس جدید ثبت شد.",
+      fallbackMessage:
+        "ذخیره برنامهٔ نوع کلاس انجام نشد.",
+    });
+
+    if (saved) {
+      resetOfferingForm();
+    }
+  };
+
+
+  const editOffering = (offering) => {
+    setOfferingForm({
+      id: offering.id,
+      day: offering.day,
+      classType: offering.classType,
+      startTime: offering.startTime,
+      endTime: offering.endTime,
+      capacity: offering.capacity,
+      isActive: offering.isActive,
+    });
+    setError("");
+    setSuccess("");
+  };
+
+
+  const removeOffering = async (offering) => {
+    const confirmed = window.confirm(
+      "این برنامهٔ کلاس حذف شود؟"
+    );
+
+    if (!confirmed) return;
+
+    const removed = await runAction({
+      key: `offering-${offering.id}`,
+      action: () =>
+        deleteClassOffering(offering.id),
+      successMessage: "برنامهٔ کلاس حذف شد.",
+      fallbackMessage:
+        "حذف برنامهٔ کلاس انجام نشد.",
+    });
+
+    if (
+      removed
+      && offeringForm.id === offering.id
+    ) {
+      resetOfferingForm();
+    }
+  };
+
+
   const submitException = async (event) => {
     event.preventDefault();
 
@@ -771,6 +939,23 @@ function AvailabilityManager({
           onClick={() => setActiveTab("weekly")}
         >
           برنامه ثابت هفتگی
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "offerings"}
+          className={
+            activeTab === "offerings"
+              ? "active"
+              : ""
+          }
+          onClick={() => setActiveTab("offerings")}
+        >
+          نوع و ساعت کلاس‌ها
+          {offerings.length > 0 && (
+            <span>{offerings.length}</span>
+          )}
         </button>
 
         <button
@@ -910,6 +1095,253 @@ function AvailabilityManager({
           })}
           </div>
         </>
+      ) : activeTab === "offerings" ? (
+        <div className="offerings-layout">
+          <form
+            className="offering-form"
+            onSubmit={submitOffering}
+          >
+            <div className="exception-form-title">
+              <span>
+                {offeringForm.id
+                  ? "ویرایش برنامه"
+                  : "برنامه جدید"}
+              </span>
+              <h3>نوع و ساعت کلاس</h3>
+              <p>
+                نوع کلاس، روز و بازهٔ دقیق برگزاری
+                را مشخص کنید.
+              </p>
+            </div>
+
+            <label className="availability-field">
+              <span>نوع کلاس</span>
+              <select
+                value={offeringForm.classType}
+                disabled={Boolean(savingKey)}
+                onChange={(event) =>
+                  changeOfferingField(
+                    "classType",
+                    event.target.value,
+                  )
+                }
+              >
+                {CLASS_TYPES.map((classType) => (
+                  <option
+                    value={classType.value}
+                    key={classType.value}
+                  >
+                    {classType.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="availability-field">
+              <span>روز برگزاری</span>
+              <select
+                value={offeringForm.day}
+                disabled={Boolean(savingKey)}
+                onChange={(event) =>
+                  changeOfferingField(
+                    "day",
+                    event.target.value,
+                  )
+                }
+              >
+                {DAYS.map((day) => (
+                  <option
+                    value={day.value}
+                    key={day.value}
+                  >
+                    {day.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="offering-time-row">
+              <label className="availability-field">
+                <span>ساعت شروع</span>
+                <TimeSelect
+                  value={offeringForm.startTime}
+                  disabled={Boolean(savingKey)}
+                  onChange={(event) =>
+                    changeOfferingField(
+                      "startTime",
+                      event.target.value,
+                    )
+                  }
+                />
+              </label>
+
+              <label className="availability-field">
+                <span>ساعت پایان</span>
+                <TimeSelect
+                  value={offeringForm.endTime}
+                  disabled={Boolean(savingKey)}
+                  onChange={(event) =>
+                    changeOfferingField(
+                      "endTime",
+                      event.target.value,
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <label className="availability-field">
+              <span>ظرفیت کلاس</span>
+              <input
+                type="number"
+                min={
+                  offeringForm.classType === "group"
+                    ? 2
+                    : 1
+                }
+                max={50}
+                value={offeringForm.capacity}
+                disabled={
+                  Boolean(savingKey)
+                  || offeringForm.classType
+                    === "private"
+                }
+                onChange={(event) =>
+                  changeOfferingField(
+                    "capacity",
+                    event.target.value,
+                  )
+                }
+              />
+              <small className="offering-field-note">
+                {offeringForm.classType === "private"
+                  ? "ظرفیت کلاس خصوصی همیشه یک نفر است."
+                  : "حداکثر تعداد هنرجوهای هم‌زمان را وارد کنید."}
+              </small>
+            </label>
+
+            <label className="full-day-check">
+              <div>
+                <strong>نمایش برای ثبت‌نام</strong>
+                <span>
+                  در برنامه عمومی قابل انتخاب باشد.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={offeringForm.isActive}
+                disabled={Boolean(savingKey)}
+                onChange={(event) =>
+                  changeOfferingField(
+                    "isActive",
+                    event.target.checked,
+                  )
+                }
+              />
+            </label>
+
+            <div className="offering-form-actions">
+              <button
+                type="submit"
+                className="add-exception-button"
+                disabled={Boolean(savingKey)}
+              >
+                {savingKey
+                  ? "در حال ذخیره..."
+                  : offeringForm.id
+                    ? "ذخیره تغییرات"
+                    : "ثبت برنامه کلاس"}
+              </button>
+
+              {offeringForm.id && (
+                <button
+                  type="button"
+                  className="cancel-offering-edit"
+                  disabled={Boolean(savingKey)}
+                  onClick={resetOfferingForm}
+                >
+                  انصراف
+                </button>
+              )}
+            </div>
+          </form>
+
+          <div className="offerings-list-card">
+            <div className="exceptions-list-head">
+              <div>
+                <span>برنامه قابل ثبت‌نام</span>
+                <h3>کلاس‌های تعریف‌شده</h3>
+              </div>
+              <strong>{offerings.length}</strong>
+            </div>
+
+            {offerings.length ? (
+              <div className="offerings-list">
+                {offerings.map((offering) => (
+                  <article
+                    className={`offering-item ${
+                      offering.isActive
+                        ? "active"
+                        : "inactive"
+                    }`}
+                    key={offering.id}
+                  >
+                    <div className="offering-item-main">
+                      <span
+                        className={`offering-type ${
+                          offering.classType
+                        }`}
+                      >
+                        {offering.classTypeLabel}
+                      </span>
+                      <strong>
+                        {offering.dayLabel}، {" "}
+                        {offering.startTime} تا {" "}
+                        {offering.endTime}
+                      </strong>
+                      <small>
+                        {offering.bookedCount} نفر ثبت‌شده
+                        {" · "}
+                        {offering.remainingCapacity} ظرفیت باقی‌مانده
+                      </small>
+                    </div>
+
+                    <div className="offering-item-actions">
+                      <button
+                        type="button"
+                        disabled={Boolean(savingKey)}
+                        onClick={() =>
+                          editOffering(offering)
+                        }
+                      >
+                        ویرایش
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        disabled={Boolean(savingKey)}
+                        onClick={() =>
+                          removeOffering(offering)
+                        }
+                      >
+                        حذف
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-exceptions">
+                <strong>
+                  هنوز نوع کلاسی تعریف نشده است
+                </strong>
+                <p>
+                  اولین برنامه را از فرم کنار ثبت کنید.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="exceptions-layout">
           <form

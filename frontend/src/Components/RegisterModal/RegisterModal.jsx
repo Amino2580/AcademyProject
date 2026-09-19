@@ -88,11 +88,18 @@ function RegisterModal({
             age: null,
             level: formData.level,
             instrument: "پیانو",
-            classType: "",
+            classType:
+              selectedSlot?.classType || "private",
+            offeringId:
+              selectedSlot?.offeringId || null,
             preferredDay:
               selectedSlot?.day || "",
             preferredTime:
               selectedSlot?.startTime || null,
+            preferredEndTime:
+              selectedSlot?.endTime || null,
+            preferredDate:
+              selectedSlot?.dateKey || null,
             message: formData.message,
           },
         }
@@ -168,8 +175,12 @@ function RegisterModal({
 
             <strong>
               {selectedSlot.dayLabel}
-              {"، ساعت "}
-              {selectedSlot.startTime}
+              {"، "}
+              {selectedSlot.classTypeLabel || "کلاس خصوصی"}
+            </strong>
+
+            <strong dir="ltr">
+              {selectedSlot.startTime} تا {selectedSlot.endTime}
             </strong>
 
             <small>

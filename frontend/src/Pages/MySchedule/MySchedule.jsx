@@ -240,11 +240,13 @@ function MySchedule() {
 
                   <div className="my-schedule-time-box">
                     <span>
-                      ساعت شروع
+                      ساعت کلاس
                     </span>
 
                     <time>
                       {classItem.startTime}
+                      {" تا "}
+                      {classItem.endTime}
                     </time>
                   </div>
                 </div>
@@ -265,22 +267,24 @@ function MySchedule() {
                   <div className="my-schedule-detail-item">
                     <div>
                       <small>
-                        نام هنرجو
+                        نوع کلاس
                       </small>
 
                       <strong>
-                        {classItem.name}
+                        {classItem.classTypeLabel ||
+                          "کلاس خصوصی"}
                       </strong>
                     </div>
                   </div>
 
                   <div className="my-schedule-detail-item">
                     <div>
-                      <small>ساز</small>
+                      <small>بازه برگزاری</small>
 
-                      <strong>
-                        {classItem.instrument ||
-                          "مشخص نشده"}
+                      <strong dir="ltr">
+                        {classItem.startTime}
+                        {" تا "}
+                        {classItem.endTime}
                       </strong>
                     </div>
                   </div>

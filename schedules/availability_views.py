@@ -4,6 +4,7 @@ from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
 )
+from rest_framework.exceptions import ValidationError
 
 from rest_framework.permissions import (
     IsAdminUser,
@@ -11,11 +12,13 @@ from rest_framework.permissions import (
 
 from .availability_serializers import (
     AvailabilityExceptionSerializer,
+    ClassOfferingSerializer,
     WeeklyAvailabilitySerializer,
 )
 
 from .models import (
     AvailabilityException,
+    ClassOffering,
     WeeklyAvailability,
 )
 from .session_service import (
@@ -75,6 +78,36 @@ class WeeklyAvailabilityDetailView(
         IsAdminUser,
     ]
 
+
+class ClassOfferingListCreateView(
+    ListCreateAPIView
+):
+    serializer_class = ClassOfferingSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = None
+
+    def get_queryset(self):
+        return (
+            ClassOffering.objects
+            .prefetch_related("bookings")
+            .all()
+            .order_by(
+                "day",
+                "start_time",
+            )
+        )
+
+
+class ClassOfferingDetailView(
+    RetrieveUpdateDestroyAPIView
+):
+    queryset = (
+        ClassOffering.objects
+        .prefetch_related("bookings")
+        .all()
+    )
+    serializer_class = ClassOfferingSerializer
+    permission_classes = [IsAdminUser]
     http_method_names = [
         "get",
         "patch",
@@ -83,6 +116,14 @@ class WeeklyAvailabilityDetailView(
         "options",
     ]
 
+    def perform_destroy(self, instance):
+        if instance.bookings.exists():
+            raise ValidationError(
+                "این برنامه هنرجوی ثبت‌شده دارد و "
+                "قابل حذف نیست؛ آن را غیرفعال کنید."
+            )
+
+        super().perform_destroy(instance)
 
 class AvailabilityExceptionListCreateView(
     ListCreateAPIView

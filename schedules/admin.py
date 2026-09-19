@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     ClassBooking,
+    ClassOffering,
     ClassSession,
     Enrollment,
 )
@@ -15,6 +16,8 @@ class ClassBookingAdmin(admin.ModelAdmin):
         "phone",
         "day_label",
         "start_time",
+        "end_time",
+        "class_type",
         "enrollment",
         "instrument",
         "updated_at",
@@ -23,6 +26,7 @@ class ClassBookingAdmin(admin.ModelAdmin):
     list_filter = (
         "day",
         "start_time",
+        "class_type",
         "created_at",
     )
 
@@ -73,6 +77,25 @@ class EnrollmentAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(ClassOffering)
+class ClassOfferingAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "class_type",
+        "day",
+        "start_time",
+        "end_time",
+        "capacity",
+        "is_active",
+    )
+
+    list_filter = (
+        "class_type",
+        "day",
+        "is_active",
+    )
+
+
 @admin.register(ClassSession)
 class ClassSessionAdmin(admin.ModelAdmin):
     list_display = (
@@ -80,6 +103,7 @@ class ClassSessionAdmin(admin.ModelAdmin):
         "student_name",
         "date",
         "start_time",
+        "end_time",
         "status",
     )
 

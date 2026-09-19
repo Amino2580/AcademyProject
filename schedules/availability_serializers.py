@@ -1,11 +1,14 @@
 from datetime import time
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
 
 from .models import (
     AvailabilityException,
+    ClassBooking,
+    ClassOffering,
     WeeklyAvailability,
 )
 from .session_service import (
@@ -180,6 +183,286 @@ class WeeklyAvailabilitySerializer(
                     "startTime": (
                         "این بازه با یکی از "
                         "ساعات ثبت‌شده تداخل دارد."
+                    )
+                }
+            )
+
+        return attrs
+
+
+class ClassOfferingSerializer(
+    serializers.ModelSerializer
+):
+    dayLabel = serializers.CharField(
+        source="get_day_display",
+        read_only=True,
+    )
+
+    classType = serializers.ChoiceField(
+        source="class_type",
+        choices=ClassBooking.ClassType.choices,
+    )
+
+    classTypeLabel = serializers.CharField(
+        source="get_class_type_display",
+        read_only=True,
+    )
+
+    startTime = serializers.TimeField(
+        source="start_time",
+        format="%H:%M",
+        input_formats=[
+            "%H:%M",
+            "%H:%M:%S",
+        ],
+    )
+
+    endTime = serializers.TimeField(
+        source="end_time",
+        format="%H:%M",
+        input_formats=[
+            "%H:%M",
+            "%H:%M:%S",
+        ],
+    )
+
+    isActive = serializers.BooleanField(
+        source="is_active",
+        required=False,
+    )
+
+    bookedCount = serializers.SerializerMethodField()
+    remainingCapacity = serializers.SerializerMethodField()
+
+    createdAt = serializers.DateTimeField(
+        source="created_at",
+        read_only=True,
+    )
+
+    updatedAt = serializers.DateTimeField(
+        source="updated_at",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ClassOffering
+
+        fields = (
+            "id",
+            "day",
+            "dayLabel",
+            "classType",
+            "classTypeLabel",
+            "startTime",
+            "endTime",
+            "capacity",
+            "bookedCount",
+            "remainingCapacity",
+            "isActive",
+            "createdAt",
+            "updatedAt",
+        )
+
+        read_only_fields = (
+            "id",
+            "dayLabel",
+            "classTypeLabel",
+            "bookedCount",
+            "remainingCapacity",
+            "createdAt",
+            "updatedAt",
+        )
+
+        validators = []
+
+    def get_bookedCount(self, obj):
+        return obj.bookings.filter(
+            enrollment__is_active=True,
+            enrollment__expires_on__gt=(
+                timezone.localdate()
+            ),
+        ).count()
+
+    def get_remainingCapacity(self, obj):
+        return max(
+            0,
+            obj.capacity
+            - self.get_bookedCount(obj),
+        )
+
+    def validate_startTime(self, value):
+        return validate_schedule_time(value)
+
+    def validate_endTime(self, value):
+        return validate_schedule_time(value)
+
+    def validate(self, attrs):
+        day = attrs.get(
+            "day",
+            getattr(self.instance, "day", None),
+        )
+        start_time = attrs.get(
+            "start_time",
+            getattr(
+                self.instance,
+                "start_time",
+                None,
+            ),
+        )
+        end_time = attrs.get(
+            "end_time",
+            getattr(
+                self.instance,
+                "end_time",
+                None,
+            ),
+        )
+        class_type = attrs.get(
+            "class_type",
+            getattr(
+                self.instance,
+                "class_type",
+                None,
+            ),
+        )
+        capacity = attrs.get(
+            "capacity",
+            getattr(
+                self.instance,
+                "capacity",
+                1,
+            ),
+        )
+
+        if start_time >= end_time:
+            raise serializers.ValidationError(
+                {
+                    "endTime": (
+                        "ساعت پایان باید بعد از "
+                        "ساعت شروع باشد."
+                    )
+                }
+            )
+
+        if (
+            class_type
+            == ClassBooking.ClassType.PRIVATE
+            and capacity != 1
+        ):
+            raise serializers.ValidationError(
+                {
+                    "capacity": (
+                        "ظرفیت کلاس خصوصی باید "
+                        "یک نفر باشد."
+                    )
+                }
+            )
+
+        if (
+            class_type
+            == ClassBooking.ClassType.GROUP
+            and capacity < 2
+        ):
+            raise serializers.ValidationError(
+                {
+                    "capacity": (
+                        "ظرفیت کلاس گروهی باید "
+                        "حداقل دو نفر باشد."
+                    )
+                }
+            )
+
+        is_inside_working_hours = (
+            WeeklyAvailability.objects.filter(
+                day=day,
+                start_time__lte=start_time,
+                end_time__gte=end_time,
+            ).exists()
+        )
+
+        if not is_inside_working_hours:
+            raise serializers.ValidationError(
+                {
+                    "startTime": (
+                        "این کلاس باید کاملاً داخل "
+                        "ساعات حضور استاد باشد."
+                    )
+                }
+            )
+
+        overlapping_offerings = (
+            ClassOffering.objects.filter(
+                day=day,
+                is_active=True,
+                start_time__lt=end_time,
+                end_time__gt=start_time,
+            )
+        )
+
+        if self.instance is not None:
+            overlapping_offerings = (
+                overlapping_offerings.exclude(
+                    pk=self.instance.pk
+                )
+            )
+
+        if overlapping_offerings.exists():
+            raise serializers.ValidationError(
+                {
+                    "startTime": (
+                        "این بازه با برنامهٔ نوع کلاس "
+                        "دیگری تداخل دارد."
+                    )
+                }
+            )
+
+        if self.instance is not None:
+            schedule_changed = any((
+                day != self.instance.day,
+                start_time != self.instance.start_time,
+                end_time != self.instance.end_time,
+                class_type != self.instance.class_type,
+            ))
+
+            if (
+                schedule_changed
+                and self.instance.bookings.exists()
+            ):
+                raise serializers.ValidationError(
+                    "برای برنامه‌ای که هنرجو دارد، "
+                    "روز، ساعت یا نوع کلاس قابل "
+                    "تغییر نیست."
+                )
+
+        conflicting_bookings = (
+            ClassBooking.objects.filter(
+                day=day,
+                start_time__lt=end_time,
+                end_time__gt=start_time,
+            ).filter(
+                Q(enrollment__isnull=True)
+                | Q(
+                    enrollment__is_active=True,
+                    enrollment__expires_on__gt=(
+                        timezone.localdate()
+                    ),
+                )
+            )
+        )
+
+        if self.instance is not None:
+            conflicting_bookings = (
+                conflicting_bookings.exclude(
+                    offering=self.instance
+                )
+            )
+
+        if conflicting_bookings.exists():
+            raise serializers.ValidationError(
+                {
+                    "startTime": (
+                        "در این بازه کلاس ثبت‌شده‌ای "
+                        "وجود دارد."
                     )
                 }
             )

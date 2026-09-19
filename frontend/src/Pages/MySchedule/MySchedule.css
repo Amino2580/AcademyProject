@@ -202,8 +202,8 @@
   color: #44c7f7;
   direction: ltr;
   unicode-bidi: isolate;
-  font-size: 38px;
-  font-weight: 900;
+  font-size: 28px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
   line-height: 1;
@@ -398,7 +398,7 @@
   }
 
   .my-schedule-time-box time {
-    font-size: 36px;
+    font-size: 26px;
   }
 
   .my-schedule-details {

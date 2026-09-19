@@ -13,7 +13,9 @@ from .availability_service import (
 )
 from .models import (
     ClassBooking,
+    ClassOffering,
     ClassSession,
+    default_end_time,
 )
 from .session_service import (
     get_first_class_date,
@@ -45,6 +47,36 @@ class ClassBookingSerializer(
             "%H:%M",
             "%H:%M:%S",
         ],
+    )
+
+    endTime = serializers.TimeField(
+        source="end_time",
+        format="%H:%M",
+        input_formats=[
+            "%H:%M",
+            "%H:%M:%S",
+        ],
+        required=False,
+    )
+
+    classType = serializers.ChoiceField(
+        source="class_type",
+        choices=ClassBooking.ClassType.choices,
+        required=False,
+    )
+
+    classTypeLabel = serializers.CharField(
+        source="get_class_type_display",
+        read_only=True,
+    )
+
+    offeringId = serializers.PrimaryKeyRelatedField(
+        source="offering",
+        queryset=ClassOffering.objects.filter(
+            is_active=True
+        ),
+        required=False,
+        allow_null=True,
     )
 
     name = serializers.CharField(
@@ -93,6 +125,10 @@ class ClassBookingSerializer(
             "day",
             "dayLabel",
             "startTime",
+            "endTime",
+            "classType",
+            "classTypeLabel",
+            "offeringId",
             "name",
             "phone",
             "instrument",
@@ -108,6 +144,7 @@ class ClassBookingSerializer(
             "id",
             "studentId",
             "dayLabel",
+            "classTypeLabel",
             "termStartsOn",
             "termExpiresOn",
             "createdAt",
@@ -162,6 +199,26 @@ class ClassBookingSerializer(
         return value
 
 
+    def validate_endTime(self, value):
+        if (
+            value.minute not in (0, 30)
+            or value.second != 0
+            or value.microsecond != 0
+            or value.hour < 7
+            or (
+                value.hour == 19
+                and value.minute > 30
+            )
+            or value.hour > 19
+        ):
+            raise serializers.ValidationError(
+                "Time must be between 07:00 and "
+                "19:30 in 30-minute intervals."
+            )
+
+        return value
+
+
     def validate(self, attrs):
         day = attrs.get(
             "day",
@@ -180,6 +237,79 @@ class ClassBookingSerializer(
                 None,
             ),
         )
+
+        end_time = attrs.get(
+            "end_time",
+            getattr(
+                self.instance,
+                "end_time",
+                None,
+            ),
+        )
+
+        offering = attrs.get(
+            "offering",
+            getattr(
+                self.instance,
+                "offering",
+                None,
+            ),
+        )
+
+        if offering is not None:
+            requested_values = {
+                "day": day,
+                "start_time": start_time,
+                "end_time": end_time,
+                "class_type": attrs.get(
+                    "class_type",
+                    getattr(
+                        self.instance,
+                        "class_type",
+                        None,
+                    ),
+                ),
+            }
+            offering_values = {
+                "day": offering.day,
+                "start_time": offering.start_time,
+                "end_time": offering.end_time,
+                "class_type": offering.class_type,
+            }
+
+            for field, value in requested_values.items():
+                if (
+                    value is not None
+                    and value != offering_values[field]
+                ):
+                    raise serializers.ValidationError(
+                        {
+                            "offeringId": (
+                                "روز، ساعت و نوع کلاس "
+                                "باید با برنامهٔ انتخابی "
+                                "هماهنگ باشد."
+                            )
+                        }
+                    )
+
+            attrs.update(offering_values)
+            day = offering.day
+            start_time = offering.start_time
+            end_time = offering.end_time
+
+        if end_time is None:
+            end_time = default_end_time(start_time)
+            attrs["end_time"] = end_time
+
+        if start_time >= end_time:
+            raise serializers.ValidationError(
+                {
+                    "endTime": (
+                        "ساعت پایان باید بعد از "
+                        "ساعت شروع باشد."
+                    )
+                }
+            )
 
         requested_first_class_date = attrs.get(
             "first_class_date"
@@ -301,12 +431,15 @@ class ClassBookingSerializer(
             starts_on,
             expires_on,
             exclude_booking=self.instance,
+            end_time=end_time,
+            offering=offering,
         ):
             raise serializers.ValidationError(
                 {
                     "startTime": (
-                        "این زمان در بخشی از دوره "
-                        "یک‌ماهه رزرو شده است."
+                        "این بازه در بخشی از دوره "
+                        "یک‌ماهه ظرفیت ندارد یا "
+                        "با کلاس دیگری تداخل دارد."
                     )
                 }
             )
@@ -504,13 +637,19 @@ class MyScheduleSerializer(
         read_only=True,
     )
 
-    name = serializers.CharField(
-        source="booking.student_name",
+    endTime = serializers.TimeField(
+        source="end_time",
+        format="%H:%M",
         read_only=True,
     )
 
-    instrument = serializers.CharField(
-        source="booking.instrument",
+    classType = serializers.CharField(
+        source="booking.class_type",
+        read_only=True,
+    )
+
+    classTypeLabel = serializers.CharField(
+        source="booking.get_class_type_display",
         read_only=True,
     )
 
@@ -546,8 +685,9 @@ class MyScheduleSerializer(
             "day",
             "dayLabel",
             "startTime",
-            "name",
-            "instrument",
+            "endTime",
+            "classType",
+            "classTypeLabel",
             "notes",
             "status",
             "statusLabel",

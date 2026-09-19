@@ -8,6 +8,7 @@ from .models import (
     ClassBooking,
     ClassSession,
     Enrollment,
+    default_end_time,
 )
 
 
@@ -158,7 +159,11 @@ def get_or_create_enrollment(
 def get_matching_exception(
     session_date,
     start_time,
+    end_time=None,
 ):
+    if end_time is None:
+        end_time = default_end_time(start_time)
+
     return (
         AvailabilityException.objects
         .filter(date=session_date)
@@ -168,7 +173,7 @@ def get_matching_exception(
                 end_time__isnull=True,
             )
             | Q(
-                start_time__lte=start_time,
+                start_time__lt=end_time,
                 end_time__gt=start_time,
             )
         )
@@ -179,11 +184,13 @@ def get_matching_exception(
 
 def get_session_defaults(
     start_time,
+    end_time,
     exception,
 ):
     if exception is None:
         return {
             "start_time": start_time,
+            "end_time": end_time,
             "status": (
                 ClassSession.Status.SCHEDULED
             ),
@@ -193,6 +200,7 @@ def get_session_defaults(
 
     return {
         "start_time": start_time,
+        "end_time": end_time,
         "status": ClassSession.Status.CANCELLED,
         "cancellation_reason": (
             exception.reason
@@ -231,10 +239,12 @@ def sync_booking_sessions(booking):
         exception = get_matching_exception(
             session_date,
             booking.start_time,
+            booking.end_time,
         )
 
         defaults = get_session_defaults(
             booking.start_time,
+            booking.end_time,
             exception,
         )
 
@@ -258,6 +268,15 @@ def sync_booking_sessions(booking):
                 )
                 update_fields.append(
                     "start_time"
+                )
+
+            if (
+                session.end_time
+                != booking.end_time
+            ):
+                session.end_time = booking.end_time
+                update_fields.append(
+                    "end_time"
                 )
 
             should_refresh_status = (
@@ -295,7 +314,12 @@ def session_dates_have_conflict(
     starts_on,
     expires_on,
     exclude_booking=None,
+    end_time=None,
+    offering=None,
 ):
+    if end_time is None:
+        end_time = default_end_time(start_time)
+
     dates = list(
         get_session_dates(
             day,
@@ -306,7 +330,8 @@ def session_dates_have_conflict(
 
     sessions = ClassSession.objects.filter(
         date__in=dates,
-        start_time=start_time,
+        start_time__lt=end_time,
+        end_time__gt=start_time,
     )
 
     if exclude_booking is not None:
@@ -314,14 +339,35 @@ def session_dates_have_conflict(
             booking=exclude_booking
         )
 
-    if sessions.exists():
-        return True
+    if offering is None:
+        if sessions.exists():
+            return True
+    else:
+        if sessions.exclude(
+            booking__offering=offering
+        ).exists():
+            return True
+
+        for session_date in dates:
+            occupied_places = (
+                sessions.filter(
+                    date=session_date,
+                    booking__offering=offering,
+                )
+                .values("booking_id")
+                .distinct()
+                .count()
+            )
+
+            if occupied_places >= offering.capacity:
+                return True
 
     legacy_bookings = (
         ClassBooking.objects.filter(
             enrollment__isnull=True,
             day=day,
-            start_time=start_time,
+            start_time__lt=end_time,
+            end_time__gt=start_time,
         )
     )
 
@@ -363,11 +409,11 @@ def sync_sessions_for_exception(
 
     if not exception.is_full_day:
         sessions = sessions.filter(
-            start_time__gte=(
-                exception.start_time
-            ),
             start_time__lt=(
                 exception.end_time
+            ),
+            end_time__gt=(
+                exception.start_time
             ),
         )
 

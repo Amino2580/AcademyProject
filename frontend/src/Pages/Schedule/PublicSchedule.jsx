@@ -85,21 +85,38 @@ const TIME_SLOTS = Array.from(
 );
 
 
-const getSlotDetails = (slotStatus) => {
+const addThirtyMinutes = (time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  const total = hours * 60 + minutes + 30;
+
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+};
+
+
+const getSlotDetails = (slot) => {
+  const slotStatus = slot?.status || "free";
   const isBooked =
     slotStatus === "booked";
 
   const isUnavailable =
-    slotStatus !== "free";
+    ["booked", "closed", "continuation"].includes(slotStatus);
+
+  const classTypeLabel =
+    slot?.classTypeLabel || "کلاس خصوصی";
+
+  const endTime =
+    slot?.endTime || addThirtyMinutes(slot?.startTime || "07:00");
 
   return {
     isBooked,
     isUnavailable,
+    classTypeLabel,
+    endTime,
     statusLabel: isBooked
       ? "ظرفیت تکمیل"
       : isUnavailable
         ? "غیرقابل رزرو"
-        : "ظرفیت آزاد",
+        : classTypeLabel,
   };
 };
 
@@ -240,18 +257,13 @@ function PublicSchedule({
   );
 
 
-  const slotStatuses = useMemo(
+  const slotDetails = useMemo(
     () =>
       new Map(
         bookings.map(
           (slot) => [
             `${slot.day}-${slot.startTime}`,
-            slot.status ||
-              (
-                slot.isBooked
-                  ? "booked"
-                  : "closed"
-              ),
+            slot,
           ]
         )
       ),
@@ -355,17 +367,26 @@ function PublicSchedule({
                       </th>
 
                       {datedDays.map((day) => {
-                        const slotStatus =
-                          slotStatuses.get(
+                        const slot =
+                          slotDetails.get(
                             `${day.value}-${time}`
-                          ) || "free";
+                          ) || {
+                            day: day.value,
+                            startTime: time,
+                            endTime: addThirtyMinutes(time),
+                            status: "free",
+                            classType: "private",
+                            classTypeLabel: "کلاس خصوصی",
+                          };
 
                         const {
                           isBooked,
                           isUnavailable,
                           statusLabel,
+                          classTypeLabel,
+                          endTime,
                         } = getSlotDetails(
-                          slotStatus
+                          slot
                         );
 
                         return (
@@ -388,7 +409,12 @@ function PublicSchedule({
                                 onRegister({
                                   day: day.value,
                                   dayLabel: day.label,
+                                  dateKey: day.dateKey,
                                   startTime: time,
+                                  endTime,
+                                  classType: slot.classType || "private",
+                                  classTypeLabel,
+                                  offeringId: slot.offeringId || null,
                                 })
                               }
                               aria-label={
@@ -398,6 +424,9 @@ function PublicSchedule({
                               <span>
                                 {statusLabel}
                               </span>
+                              {!isUnavailable && (
+                                <small>{time} تا {endTime}</small>
+                              )}
                             </button>
                           </td>
                         );
@@ -485,17 +514,25 @@ function PublicSchedule({
 
                 <div className="public-mobile-slots">
                   {TIME_SLOTS.map((time) => {
-                    const slotStatus =
-                      slotStatuses.get(
+                    const slot =
+                      slotDetails.get(
                         `${activeMobileDay.value}-${time}`
-                      ) || "free";
+                      ) || {
+                        startTime: time,
+                        endTime: addThirtyMinutes(time),
+                        status: "free",
+                        classType: "private",
+                        classTypeLabel: "کلاس خصوصی",
+                      };
 
                     const {
                       isBooked,
                       isUnavailable,
                       statusLabel,
+                      classTypeLabel,
+                      endTime,
                     } = getSlotDetails(
-                      slotStatus
+                      slot
                     );
 
                     return (
@@ -523,7 +560,12 @@ function PublicSchedule({
                             onRegister({
                               day: activeMobileDay.value,
                               dayLabel: activeMobileDay.label,
+                              dateKey: activeMobileDay.dateKey,
                               startTime: time,
+                              endTime,
+                              classType: slot.classType || "private",
+                              classTypeLabel,
+                              offeringId: slot.offeringId || null,
                             })
                           }
                           aria-label={
@@ -533,7 +575,7 @@ function PublicSchedule({
                           <span>{statusLabel}</span>
                           {!isUnavailable && (
                             <small>
-                              انتخاب این ساعت
+                              {time} تا {endTime}
                             </small>
                           )}
                         </button>

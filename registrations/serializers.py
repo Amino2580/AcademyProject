@@ -10,7 +10,9 @@ from schedules.availability_service import (
 )
 from schedules.models import (
     ClassBooking,
+    ClassOffering,
     ClassSession,
+    default_end_time,
 )
 from schedules.session_service import (
     get_first_class_date,
@@ -32,11 +34,22 @@ class RegistrationRequestCreateSerializer(
         max_length=150,
     )
 
-    classType = serializers.CharField(
+    classType = serializers.ChoiceField(
         source="class_type",
-        max_length=100,
+        choices=(
+            RegistrationRequest.ClassType.choices
+        ),
         required=False,
         allow_blank=True,
+    )
+
+    offeringId = serializers.PrimaryKeyRelatedField(
+        source="class_offering",
+        queryset=ClassOffering.objects.filter(
+            is_active=True
+        ),
+        required=False,
+        allow_null=True,
     )
 
     preferredDate = serializers.DateField(
@@ -71,6 +84,17 @@ class RegistrationRequestCreateSerializer(
         allow_null=True,
     )
 
+    preferredEndTime = serializers.TimeField(
+        source="preferred_end_time",
+        format="%H:%M",
+        input_formats=[
+            "%H:%M",
+            "%H:%M:%S",
+        ],
+        required=False,
+        allow_null=True,
+    )
+
     createdAt = serializers.DateTimeField(
         source="created_at",
         read_only=True,
@@ -87,9 +111,11 @@ class RegistrationRequestCreateSerializer(
             "level",
             "instrument",
             "classType",
+            "offeringId",
             "preferredDate",
             "preferredDay",
             "preferredTime",
+            "preferredEndTime",
             "message",
             "createdAt",
         )
@@ -172,6 +198,31 @@ class RegistrationRequestCreateSerializer(
 
         return value
 
+    def validate_preferredEndTime(
+        self,
+        value,
+    ):
+        if value is None:
+            return value
+
+        if (
+            value.minute not in (0, 30)
+            or value.second != 0
+            or value.microsecond != 0
+            or value.hour < 7
+            or value.hour > 19
+            or (
+                value.hour == 19
+                and value.minute > 30
+            )
+        ):
+            raise serializers.ValidationError(
+                "Time must be between 07:00 and "
+                "19:30 in 30-minute intervals."
+            )
+
+        return value
+
     def validate(self, attrs):
         preferred_date = attrs.get(
             "preferred_date"
@@ -186,6 +237,67 @@ class RegistrationRequestCreateSerializer(
             "preferred_time"
         )
 
+        preferred_end_time = attrs.get(
+            "preferred_end_time"
+        )
+
+        offering = attrs.get(
+            "class_offering"
+        )
+
+        if offering is not None:
+            requested_class_type = attrs.get(
+                "class_type"
+            )
+
+            if (
+                preferred_day
+                and preferred_day != offering.day
+            ) or (
+                preferred_time is not None
+                and preferred_time
+                != offering.start_time
+            ) or (
+                preferred_end_time is not None
+                and preferred_end_time
+                != offering.end_time
+            ) or (
+                requested_class_type
+                and requested_class_type
+                != offering.class_type
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "offeringId": (
+                            "زمان یا نوع کلاس با "
+                            "برنامهٔ انتخابی هماهنگ نیست."
+                        )
+                    }
+                )
+
+            preferred_day = offering.day
+            preferred_time = offering.start_time
+            preferred_end_time = offering.end_time
+            attrs.update({
+                "preferred_day": preferred_day,
+                "preferred_time": preferred_time,
+                "preferred_end_time": (
+                    preferred_end_time
+                ),
+                "class_type": offering.class_type,
+            })
+
+        if (
+            preferred_time is not None
+            and preferred_end_time is None
+        ):
+            preferred_end_time = default_end_time(
+                preferred_time
+            )
+            attrs["preferred_end_time"] = (
+                preferred_end_time
+            )
+
         has_date = (
             preferred_date is not None
         )
@@ -198,10 +310,34 @@ class RegistrationRequestCreateSerializer(
             preferred_time is not None
         )
 
+        has_end_time = (
+            preferred_end_time is not None
+        )
+
         if has_day != has_time:
             raise serializers.ValidationError(
                 "Preferred day and time must "
                 "be selected together."
+            )
+
+        if has_time != has_end_time:
+            raise serializers.ValidationError(
+                "Preferred start and end time must "
+                "be selected together."
+            )
+
+        if (
+            has_time
+            and preferred_time
+            >= preferred_end_time
+        ):
+            raise serializers.ValidationError(
+                {
+                    "preferredEndTime": (
+                        "ساعت پایان باید بعد از "
+                        "ساعت شروع باشد."
+                    )
+                }
             )
 
         if has_date and not (
@@ -250,6 +386,8 @@ class RegistrationRequestCreateSerializer(
                 preferred_day,
                 preferred_time,
                 requested_date=preferred_date,
+                end_time=preferred_end_time,
+                offering=offering,
             )
         ):
             raise serializers.ValidationError(
@@ -277,6 +415,16 @@ class RegistrationRequestAdminSerializer(
         read_only=True,
     )
 
+    classTypeLabel = serializers.CharField(
+        source="get_class_type_display",
+        read_only=True,
+    )
+
+    offeringId = serializers.IntegerField(
+        source="class_offering_id",
+        read_only=True,
+    )
+
     preferredDate = serializers.DateField(
         source="preferred_date",
         format="%Y-%m-%d",
@@ -295,6 +443,12 @@ class RegistrationRequestAdminSerializer(
 
     preferredTime = serializers.TimeField(
         source="preferred_time",
+        format="%H:%M",
+        read_only=True,
+    )
+
+    preferredEndTime = serializers.TimeField(
+        source="preferred_end_time",
         format="%H:%M",
         read_only=True,
     )
@@ -332,10 +486,13 @@ class RegistrationRequestAdminSerializer(
             "level",
             "instrument",
             "classType",
+            "classTypeLabel",
+            "offeringId",
             "preferredDate",
             "preferredDay",
             "preferredDayLabel",
             "preferredTime",
+            "preferredEndTime",
             "message",
             "status",
             "termStartsOn",
@@ -386,6 +543,10 @@ class RegistrationRequestStatusUpdateSerializer(
                 booking__day=(
                     registration.preferred_day
                 ),
+                booking__phone=registration.phone,
+                booking__offering=(
+                    registration.class_offering
+                ),
             )
             .first()
         )
@@ -399,6 +560,10 @@ class RegistrationRequestStatusUpdateSerializer(
                 day=registration.preferred_day,
                 start_time=(
                     registration.preferred_time
+                ),
+                phone=registration.phone,
+                offering=(
+                    registration.class_offering
                 ),
             )
             .first()
@@ -422,26 +587,18 @@ class RegistrationRequestStatusUpdateSerializer(
         )
 
         if (
-            existing_booking is not None
-            and existing_booking.phone
-            != registration.phone
-        ):
-            raise serializers.ValidationError(
-                {
-                    "status": (
-                        "این زمان قبلاً به هنرجوی "
-                        "دیگری اختصاص داده شده است."
-                    )
-                }
-            )
-
-        if (
             existing_booking is None
             and not is_slot_available(
                 registration.preferred_day,
                 registration.preferred_time,
                 requested_date=(
                     first_session_date
+                ),
+                end_time=(
+                    registration.preferred_end_time
+                ),
+                offering=(
+                    registration.class_offering
                 ),
             )
         ):
@@ -505,12 +662,19 @@ class RegistrationRequestStatusUpdateSerializer(
             starts_on,
             expires_on,
             exclude_booking=existing_booking,
+            end_time=(
+                registration.preferred_end_time
+            ),
+            offering=(
+                registration.class_offering
+            ),
         ):
             raise serializers.ValidationError(
                 {
                     "status": (
-                        "این ساعت در بخشی از دوره "
-                        "یک‌ماهه رزرو شده است."
+                        "این بازه در بخشی از دوره "
+                        "یک‌ماهه ظرفیت ندارد یا "
+                        "با کلاس دیگری تداخل دارد."
                     )
                 }
             )
@@ -639,6 +803,9 @@ class RegistrationRequestStatusUpdateSerializer(
                         registration.preferred_time
                     ),
                     phone=registration.phone,
+                    offering=(
+                        registration.class_offering
+                    ),
                 )
                 .first()
             )
@@ -650,6 +817,19 @@ class RegistrationRequestStatusUpdateSerializer(
                 day=registration.preferred_day,
                 start_time=(
                     registration.preferred_time
+                ),
+                end_time=(
+                    registration.preferred_end_time
+                    or default_end_time(
+                        registration.preferred_time
+                    )
+                ),
+                class_type=(
+                    registration.class_type
+                    or ClassBooking.ClassType.PRIVATE
+                ),
+                offering=(
+                    registration.class_offering
                 ),
                 student_name=(
                     registration.full_name
@@ -666,6 +846,19 @@ class RegistrationRequestStatusUpdateSerializer(
             booking.student_name = (
                 registration.full_name
             )
+            booking.end_time = (
+                registration.preferred_end_time
+                or default_end_time(
+                    registration.preferred_time
+                )
+            )
+            booking.class_type = (
+                registration.class_type
+                or ClassBooking.ClassType.PRIVATE
+            )
+            booking.offering = (
+                registration.class_offering
+            )
             booking.instrument = (
                 registration.instrument
             )
@@ -675,6 +868,9 @@ class RegistrationRequestStatusUpdateSerializer(
                     "enrollment",
                     "student",
                     "student_name",
+                    "end_time",
+                    "class_type",
+                    "offering",
                     "instrument",
                     "notes",
                     "updated_at",

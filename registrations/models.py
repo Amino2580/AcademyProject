@@ -17,6 +17,11 @@ class RegistrationRequest(models.Model):
         THURSDAY = "thursday", "پنجشنبه"
         FRIDAY = "friday", "جمعه"
 
+    class ClassType(models.TextChoices):
+        PRIVATE = "private", "کلاس خصوصی"
+        GROUP = "group", "کلاس گروهی"
+        ONLINE = "online", "کلاس آنلاین"
+
     full_name = models.CharField(
         max_length=150,
     )
@@ -42,7 +47,16 @@ class RegistrationRequest(models.Model):
     )
 
     class_type = models.CharField(
-        max_length=100,
+        max_length=20,
+        choices=ClassType.choices,
+        blank=True,
+    )
+
+    class_offering = models.ForeignKey(
+        "schedules.ClassOffering",
+        on_delete=models.SET_NULL,
+        related_name="registration_requests",
+        null=True,
         blank=True,
     )
 
@@ -59,6 +73,11 @@ class RegistrationRequest(models.Model):
     )
 
     preferred_time = models.TimeField(
+        null=True,
+        blank=True,
+    )
+
+    preferred_end_time = models.TimeField(
         null=True,
         blank=True,
     )

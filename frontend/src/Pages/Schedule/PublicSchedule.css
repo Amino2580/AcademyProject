@@ -138,6 +138,19 @@
     border-color 180ms ease;
 }
 
+.public-schedule-slot:not(:disabled) {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.public-schedule-slot small {
+  direction: ltr;
+  color: currentColor;
+  font-size: 9px;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
 .public-schedule-slot.is-free {
   color: #66e5aa;
   border-color: rgb(61 220 151 / 35%);

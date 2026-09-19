@@ -17,6 +17,7 @@ from .availability_service import (
 )
 from .models import (
     ClassBooking,
+    ClassOffering,
     ClassSession,
     Enrollment,
 )
@@ -638,6 +639,9 @@ class PublicScheduleAvailabilityAPITests(
                 "day",
                 "dayLabel",
                 "startTime",
+                "endTime",
+                "classType",
+                "classTypeLabel",
                 "isBooked",
                 "status",
             },
@@ -657,6 +661,29 @@ class PublicScheduleAvailabilityAPITests(
             "notes",
             booking,
         )
+
+    def test_public_api_exposes_class_offering_details(self):
+        offering = ClassOffering.objects.create(
+            day=ClassBooking.Weekday.MONDAY,
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            class_type=ClassBooking.ClassType.GROUP,
+            capacity=4,
+        )
+
+        response = self.client.get(self.url)
+        slot = next(
+            item
+            for item in response.data
+            if item.get("offeringId") == offering.id
+            and item["startTime"] == "10:00"
+        )
+
+        self.assertEqual(slot["status"], "offering")
+        self.assertEqual(slot["endTime"], "11:00")
+        self.assertEqual(slot["classType"], "group")
+        self.assertEqual(slot["classTypeLabel"], "کلاس گروهی")
+        self.assertEqual(slot["remainingCapacity"], 4)
 
     def test_public_api_does_not_allow_creating_booking(self):
         response = self.client.post(
@@ -833,6 +860,24 @@ class MyScheduleAPITests(
             response.data[0]["startTime"],
             "09:00",
         )
+
+        self.assertEqual(
+            response.data[0]["endTime"],
+            "09:30",
+        )
+
+        self.assertEqual(
+            response.data[0]["classType"],
+            "private",
+        )
+
+        self.assertEqual(
+            response.data[0]["classTypeLabel"],
+            "کلاس خصوصی",
+        )
+
+        self.assertNotIn("name", response.data[0])
+        self.assertNotIn("instrument", response.data[0])
 
         self.assertEqual(
             response.data[0]["date"],

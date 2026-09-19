@@ -96,6 +96,18 @@ for (let h = 7; h <= 19; h++) {
 const makeId = (day, time) =>
   `${day}|${time}`;
 
+const CLASS_TYPE_LABELS = {
+  private: "کلاس خصوصی",
+  group: "کلاس گروهی",
+  online: "کلاس آنلاین",
+};
+
+const addThirtyMinutes = (time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  const total = hours * 60 + minutes + 30;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+};
+
 
 const DAY_MONTH_FORMATTER =
   new Intl.DateTimeFormat(
@@ -202,6 +214,9 @@ function Schedule() {
     name: "",
     phone: "",
     instrument: "",
+    classType: "private",
+    endTime: "",
+    offeringId: null,
     notes: "",
   });
   const [loading, setLoading] =
@@ -231,6 +246,9 @@ function Schedule() {
     unavailableSlotIds,
     setUnavailableSlotIds,
   ] = useState(() => new Set());
+
+  const [slotMetadata, setSlotMetadata] =
+    useState(() => new Map());
 
   const [
     availabilityLoading,
@@ -353,7 +371,13 @@ const loadWeekAvailability = useCallback(
 
       setUnavailableSlotIds(
         new Set(
-          unavailableItems.map(
+          unavailableItems
+            .filter((item) =>
+              ["booked", "closed", "continuation"].includes(
+                item.status || (item.isBooked ? "booked" : "closed")
+              )
+            )
+            .map(
             (item) =>
               makeId(
                 DAY_LABELS[item.day]
@@ -361,6 +385,18 @@ const loadWeekAvailability = useCallback(
                 item.startTime
               )
           )
+        )
+      );
+
+      setSlotMetadata(
+        new Map(
+          unavailableItems.map((item) => [
+            makeId(
+              DAY_LABELS[item.day] || item.dayLabel,
+              item.startTime,
+            ),
+            item,
+          ])
         )
       );
     } catch (loadError) {
@@ -419,10 +455,16 @@ useEffect(() => {
   const openBooking = (id) => {
     setSelectedId(id);
 
+    const time = id.split("|")[1];
+    const metadata = slotMetadata.get(id);
+
     setForm({
       name: "",
       phone: "",
-      instrument: "",
+      instrument: "پیانو",
+      classType: metadata?.classType || "private",
+      endTime: metadata?.endTime || addThirtyMinutes(time),
+      offeringId: metadata?.offeringId || null,
       notes: "",
     });
 
@@ -450,6 +492,9 @@ useEffect(() => {
     name: form.name.trim(),
     phone: form.phone.trim(),
     instrument: form.instrument.trim(),
+    classType: form.classType,
+    endTime: form.endTime,
+    offeringId: form.offeringId,
     notes: form.notes.trim(),
   };
 
@@ -499,6 +544,9 @@ useEffect(() => {
       name: booking.name || "",
       phone: booking.phone || "",
       instrument: booking.instrument || "",
+      classType: booking.classType || "private",
+      endTime: booking.endTime || addThirtyMinutes(booking.startTime),
+      offeringId: booking.offeringId || null,
       notes: booking.notes || "",
     });
 
@@ -563,6 +611,7 @@ useEffect(() => {
       ${booking?.name || ""}
       ${booking?.phone || ""}
       ${booking?.instrument || ""}
+      ${booking?.classTypeLabel || ""}
       ${booking?.notes || ""}
     `.toLowerCase();
 
@@ -1033,8 +1082,10 @@ useEffect(() => {
                                 </strong>
 
                                 <small>
-                                  {booking.instrument ||
-                                    "کلاس پیانو"}
+                                  {booking.classTypeLabel ||
+                                    "کلاس خصوصی"}
+                                  {" · "}
+                                  {booking.startTime} تا {booking.endTime}
                                 </small>
                               </>
                             ) : (
@@ -1214,8 +1265,7 @@ useEffect(() => {
 
                       <small>
                         {booking
-                          ? booking.instrument
-                            || "کلاس پیانو"
+                          ? `${booking.classTypeLabel || "کلاس خصوصی"} · ${booking.startTime} تا ${booking.endTime}`
                           : unavailable
                             ? "خارج از زمان تدریس"
                             : "برای ثبت رزرو لمس کنید"}
@@ -1328,19 +1378,53 @@ useEffect(() => {
               <div className="form-field">
 
                 <label>
-                  ساز / نوع کلاس
+                  نوع کلاس
                 </label>
 
-                <input
-                  value={form.instrument}
+                <select
+                  value={form.classType}
+                  disabled={Boolean(form.offeringId)}
                   onChange={(e) =>
                     setForm({
                       ...form,
-                      instrument: e.target.value,
+                      classType: e.target.value,
                     })
                   }
-                  placeholder="مثلاً پیانو"
-                />
+                >
+                  {Object.entries(CLASS_TYPE_LABELS).map(
+                    ([value, label]) => (
+                      <option value={value} key={value}>
+                        {label}
+                      </option>
+                    )
+                  )}
+                </select>
+
+              </div>
+
+              <div className="form-field">
+
+                <label>ساعت پایان</label>
+
+                <select
+                  value={form.endTime}
+                  disabled={Boolean(form.offeringId)}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      endTime: e.target.value,
+                    })
+                  }
+                >
+                  {TIMES.filter(
+                    (time) => time > selectedTime
+                  ).map((time) => (
+                    <option value={time} key={time}>
+                      {time}
+                    </option>
+                  ))}
+                  <option value="19:30">19:30</option>
+                </select>
 
               </div>
 
@@ -1437,7 +1521,7 @@ useEffect(() => {
                   </span>
 
                   <strong>
-                    {selectedDateLabel} — {selectedTime}
+                    {selectedDateLabel} — {selectedTime} تا {selectedBooking.endTime}
                   </strong>
                 </div>
 
@@ -1463,12 +1547,12 @@ useEffect(() => {
 
                 <div>
                   <span>
-                    ساز / کلاس
+                    نوع کلاس
                   </span>
 
                   <strong>
-                    {selectedBooking.instrument ||
-                      "—"}
+                    {selectedBooking.classTypeLabel ||
+                      "کلاس خصوصی"}
                   </strong>
                 </div>
 

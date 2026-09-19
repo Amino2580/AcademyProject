@@ -3,6 +3,8 @@ from django.urls import path
 from .availability_views import (
     AvailabilityExceptionDetailView,
     AvailabilityExceptionListCreateView,
+    ClassOfferingDetailView,
+    ClassOfferingListCreateView,
     WeeklyAvailabilityDetailView,
     WeeklyAvailabilityListCreateView,
 )
@@ -31,6 +33,16 @@ urlpatterns = [
         "availability/<int:pk>/",
         WeeklyAvailabilityDetailView.as_view(),
         name="availability-detail",
+    ),
+    path(
+        "offerings/",
+        ClassOfferingListCreateView.as_view(),
+        name="offering-list-create",
+    ),
+    path(
+        "offerings/<int:pk>/",
+        ClassOfferingDetailView.as_view(),
+        name="offering-detail",
     ),
     path(
         "exceptions/",

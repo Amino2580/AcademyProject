@@ -16,6 +16,7 @@ from rest_framework.test import APITestCase
 from .models import (
     AvailabilityException,
     ClassBooking,
+    ClassOffering,
     ClassSession,
     Enrollment,
     WeeklyAvailability,
@@ -178,6 +179,59 @@ class WeeklyAvailabilityAPITests(
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+
+
+class ClassOfferingAPITests(APITestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.admin_user = user_model.objects.create_superuser(
+            username="offering-admin",
+            password="test-password-123",
+            email="admin@example.com",
+        )
+        self.url = reverse(
+            "schedule_admin:offering-list-create"
+        )
+
+    def test_admin_can_create_group_offering(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "day": ClassBooking.Weekday.SATURDAY,
+                "classType": ClassBooking.ClassType.GROUP,
+                "startTime": "10:00",
+                "endTime": "11:00",
+                "capacity": 4,
+                "isActive": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        offering = ClassOffering.objects.get()
+        self.assertEqual(offering.class_type, ClassBooking.ClassType.GROUP)
+        self.assertEqual(offering.capacity, 4)
+        self.assertEqual(offering.end_time, time(11, 0))
+
+    def test_private_offering_rejects_capacity_over_one(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "day": ClassBooking.Weekday.SUNDAY,
+                "classType": ClassBooking.ClassType.PRIVATE,
+                "startTime": "10:00",
+                "endTime": "10:30",
+                "capacity": 2,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(ClassOffering.objects.exists())
 
 
 class AvailabilityExceptionAPITests(

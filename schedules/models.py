@@ -1,7 +1,23 @@
+from datetime import (
+    date,
+    datetime,
+    timedelta,
+)
+
 from django.db import models
 from django.db.models import F, Q
 
 from students.models import Student
+
+
+def default_end_time(start_time):
+    if start_time is None:
+        return None
+
+    return (
+        datetime.combine(date.min, start_time)
+        + timedelta(minutes=30)
+    ).time()
 
 
 class Enrollment(models.Model):
@@ -70,6 +86,11 @@ class ClassBooking(models.Model):
         THURSDAY = "thursday", "پنجشنبه"
         FRIDAY = "friday", "جمعه"
 
+    class ClassType(models.TextChoices):
+        PRIVATE = "private", "کلاس خصوصی"
+        GROUP = "group", "کلاس گروهی"
+        ONLINE = "online", "کلاس آنلاین"
+
     day = models.CharField(
         max_length=10,
         choices=Weekday.choices,
@@ -78,6 +99,25 @@ class ClassBooking(models.Model):
 
     start_time = models.TimeField(
         db_index=True,
+    )
+
+    end_time = models.TimeField(
+        db_index=True,
+    )
+
+    class_type = models.CharField(
+        max_length=20,
+        choices=ClassType.choices,
+        default=ClassType.PRIVATE,
+        db_index=True,
+    )
+
+    offering = models.ForeignKey(
+        "ClassOffering",
+        on_delete=models.PROTECT,
+        related_name="bookings",
+        null=True,
+        blank=True,
     )
 
     student = models.ForeignKey(
@@ -128,11 +168,112 @@ class ClassBooking(models.Model):
             "start_time",
         ]
 
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(
+                    start_time__lt=F("end_time")
+                ),
+                name=(
+                    "class_booking_start_before_end"
+                ),
+            ),
+        ]
+
     def __str__(self):
         return (
             f"{self.get_day_display()} "
-            f"{self.start_time:%H:%M} - "
+            f"{self.start_time:%H:%M} تا "
+            f"{self.end_time:%H:%M} - "
             f"{self.student_name}"
+        )
+
+    def save(self, *args, **kwargs):
+        if self.end_time is None:
+            self.end_time = default_end_time(
+                self.start_time
+            )
+
+        super().save(*args, **kwargs)
+
+
+class ClassOffering(models.Model):
+    day = models.CharField(
+        max_length=10,
+        choices=ClassBooking.Weekday.choices,
+        db_index=True,
+    )
+
+    start_time = models.TimeField(
+        db_index=True,
+    )
+
+    end_time = models.TimeField(
+        db_index=True,
+    )
+
+    class_type = models.CharField(
+        max_length=20,
+        choices=ClassBooking.ClassType.choices,
+        db_index=True,
+    )
+
+    capacity = models.PositiveSmallIntegerField(
+        default=1,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = [
+            "day",
+            "start_time",
+        ]
+
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(
+                    start_time__lt=F("end_time")
+                ),
+                name=(
+                    "class_offering_start_before_end"
+                ),
+            ),
+            models.CheckConstraint(
+                condition=Q(capacity__gte=1),
+                name=(
+                    "class_offering_positive_capacity"
+                ),
+            ),
+            models.UniqueConstraint(
+                fields=[
+                    "day",
+                    "start_time",
+                    "end_time",
+                    "class_type",
+                ],
+                name=(
+                    "unique_class_offering_schedule"
+                ),
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.get_class_type_display()} - "
+            f"{self.get_day_display()} "
+            f"{self.start_time:%H:%M} تا "
+            f"{self.end_time:%H:%M}"
         )
 
 
@@ -345,6 +486,10 @@ class ClassSession(models.Model):
         db_index=True,
     )
 
+    end_time = models.TimeField(
+        db_index=True,
+    )
+
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -384,15 +529,6 @@ class ClassSession(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=[
-                    "date",
-                    "start_time",
-                ],
-                name=(
-                    "unique_class_session_slot"
-                ),
-            ),
-            models.UniqueConstraint(
-                fields=[
                     "booking",
                     "date",
                 ],
@@ -405,6 +541,15 @@ class ClassSession(models.Model):
     def __str__(self):
         return (
             f"{self.date} "
-            f"{self.start_time:%H:%M} - "
+            f"{self.start_time:%H:%M} تا "
+            f"{self.end_time:%H:%M} - "
             f"{self.booking.student_name}"
         )
+
+    def save(self, *args, **kwargs):
+        if self.end_time is None:
+            self.end_time = default_end_time(
+                self.start_time
+            )
+
+        super().save(*args, **kwargs)

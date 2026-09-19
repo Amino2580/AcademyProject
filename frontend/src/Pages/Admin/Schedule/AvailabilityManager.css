@@ -917,6 +917,141 @@
   display: none;
 }
 
+.offerings-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(420px, 1.35fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.offering-form,
+.offerings-list-card {
+  padding: 22px;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 18px;
+  background: rgba(9, 24, 46, 0.54);
+}
+
+.offering-form {
+  display: grid;
+  gap: 16px;
+}
+
+.offering-time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.offering-field-note {
+  display: block;
+  margin-top: 7px;
+  color: rgba(186, 230, 253, 0.54);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.offering-form-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.cancel-offering-edit {
+  min-width: 82px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 11px;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.72);
+  font: inherit;
+  cursor: pointer;
+}
+
+.offerings-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 17px;
+}
+
+.offering-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px;
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  border-radius: 14px;
+  background: rgba(15, 31, 56, 0.72);
+}
+
+.offering-item.inactive {
+  opacity: 0.58;
+}
+
+.offering-item-main {
+  display: grid;
+  gap: 6px;
+}
+
+.offering-item-main strong {
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.offering-item-main small {
+  color: rgba(186, 230, 253, 0.58);
+  font-size: 10px;
+}
+
+.offering-type {
+  width: max-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.1);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.offering-type.group {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.offering-type.online {
+  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.11);
+}
+
+.offering-item-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.offering-item-actions button {
+  padding: 8px 12px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 9px;
+  background: rgba(56, 189, 248, 0.07);
+  color: #bae6fd;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.offering-item-actions button.danger {
+  border-color: rgba(248, 113, 113, 0.18);
+  background: rgba(248, 113, 113, 0.06);
+  color: #fda4af;
+}
+
+@media (max-width: 920px) {
+  .offerings-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 650px) {
   .availability-manager {
     margin-bottom: 20px;
@@ -1023,8 +1158,20 @@
   }
 
   .exception-form,
-  .exceptions-list-card {
+  .exceptions-list-card,
+  .offering-form,
+  .offerings-list-card {
     padding: 15px;
+  }
+
+  .offering-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .offering-item-actions button {
+    flex: 1;
+    min-height: 40px;
   }
 
   .full-day-check {
@@ -1073,5 +1220,13 @@
     padding-inline: 7px;
     font-size: 10px;
   }
-}
 
+  .offering-time-row,
+  .offering-form-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .cancel-offering-edit {
+    min-height: 42px;
+  }
+}
