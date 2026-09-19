@@ -372,6 +372,26 @@ class ClassOfferingSerializer(
                 }
             )
 
+        if self.instance is not None:
+            active_booking_count = (
+                self.instance.bookings.filter(
+                    enrollment__is_active=True,
+                    enrollment__expires_on__gt=(
+                        timezone.localdate()
+                    ),
+                ).count()
+            )
+
+            if capacity < active_booking_count:
+                raise serializers.ValidationError(
+                    {
+                        "capacity": (
+                            "ظرفیت نمی‌تواند از تعداد "
+                            "هنرجوهای ثبت‌شده کمتر باشد."
+                        )
+                    }
+                )
+
         is_inside_working_hours = (
             WeeklyAvailability.objects.filter(
                 day=day,

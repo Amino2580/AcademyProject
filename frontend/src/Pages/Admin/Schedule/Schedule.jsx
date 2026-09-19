@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 import {
+  createClassOffering,
   createScheduleBooking,
   deleteScheduleBooking,
   getPublicScheduleAvailability,
@@ -208,6 +209,8 @@ function Schedule() {
   const [search, setSearch] = useState("");
 
   const [selectedId, setSelectedId] = useState(null);
+  const [editingBookingId, setEditingBookingId] =
+    useState(null);
   const [modal, setModal] = useState(null);
 
   const [form, setForm] = useState({
@@ -216,6 +219,7 @@ function Schedule() {
     instrument: "",
     classType: "private",
     endTime: "",
+    capacity: 1,
     offeringId: null,
     notes: "",
   });
@@ -323,7 +327,11 @@ function Schedule() {
           booking.startTime
         );
 
-        bookingMap[slotId] = booking;
+        if (!bookingMap[slotId]) {
+          bookingMap[slotId] = [];
+        }
+
+        bookingMap[slotId].push(booking);
       });
 
       setBookings(bookingMap);
@@ -454,17 +462,35 @@ useEffect(() => {
 
   const openBooking = (id) => {
     setSelectedId(id);
+    setEditingBookingId(null);
 
     const time = id.split("|")[1];
     const metadata = slotMetadata.get(id);
+    const existingBooking =
+      bookings[id]?.[0];
+
+    const classType =
+      metadata?.classType
+      || existingBooking?.classType
+      || "private";
 
     setForm({
       name: "",
       phone: "",
       instrument: "پیانو",
-      classType: metadata?.classType || "private",
-      endTime: metadata?.endTime || addThirtyMinutes(time),
-      offeringId: metadata?.offeringId || null,
+      classType,
+      endTime:
+        metadata?.endTime
+        || existingBooking?.endTime
+        || addThirtyMinutes(time),
+      capacity:
+        metadata?.capacity
+        || existingBooking?.capacity
+        || (classType === "group" ? 2 : 1),
+      offeringId:
+        metadata?.offeringId
+        || existingBooking?.offeringId
+        || null,
       notes: "",
     });
 
@@ -475,6 +501,7 @@ useEffect(() => {
 
   const showDetails = (id) => {
     setSelectedId(id);
+    setEditingBookingId(null);
     setModal("details");
   };
 
@@ -488,20 +515,44 @@ useEffect(() => {
   setSaving(true);
   setError("");
 
-  const bookingData = {
-    name: form.name.trim(),
-    phone: form.phone.trim(),
-    instrument: form.instrument.trim(),
-    classType: form.classType,
-    endTime: form.endTime,
-    offeringId: form.offeringId,
-    notes: form.notes.trim(),
-  };
-
   try {
-    if (selectedBooking) {
+    let offeringId = form.offeringId;
+
+    if (!offeringId && !editingBooking) {
+      const offering = await createClassOffering({
+        day: DAY_VALUES[selectedDay],
+        classType: form.classType,
+        startTime: selectedTime,
+        endTime: form.endTime,
+        capacity:
+          form.classType === "group"
+            ? Number(form.capacity)
+            : 1,
+        isActive: true,
+      });
+
+      offeringId = offering.id;
+
+      setForm((current) => ({
+        ...current,
+        offeringId: offering.id,
+        capacity: offering.capacity,
+      }));
+    }
+
+    const bookingData = {
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      instrument: form.instrument.trim(),
+      classType: form.classType,
+      endTime: form.endTime,
+      offeringId,
+      notes: form.notes.trim(),
+    };
+
+    if (editingBooking) {
       await updateScheduleBooking(
-        selectedBooking.id,
+        editingBooking.id,
         bookingData
       );
     } else {
@@ -523,6 +574,7 @@ useEffect(() => {
       loadBookings(),
       loadWeekAvailability(),
     ]);
+    setEditingBookingId(null);
     setModal(null);
   } catch (submitError) {
     setError(
@@ -535,10 +587,10 @@ useEffect(() => {
 };
   /* ================= EDIT ================= */
 
-  const editBooking = () => {
-    const booking = bookings[selectedId];
-
+  const editBooking = (booking) => {
     if (!booking) return;
+
+    setEditingBookingId(booking.id);
 
     setForm({
       name: booking.name || "",
@@ -546,6 +598,7 @@ useEffect(() => {
       instrument: booking.instrument || "",
       classType: booking.classType || "private",
       endTime: booking.endTime || addThirtyMinutes(booking.startTime),
+      capacity: booking.capacity || 1,
       offeringId: booking.offeringId || null,
       notes: booking.notes || "",
     });
@@ -555,11 +608,11 @@ useEffect(() => {
 
   /* ================= CANCEL ================= */
 
- const cancelBooking = async () => {
-  if (!selectedBooking) return;
+ const cancelBooking = async (booking) => {
+  if (!booking) return;
 
   const confirmed = window.confirm(
-    "آیا مطمئن هستید که می‌خواهید این رزرو را لغو کنید؟"
+    `رزرو ${booking.name} لغو شود؟`
   );
 
   if (!confirmed) return;
@@ -569,13 +622,14 @@ useEffect(() => {
 
   try {
     await deleteScheduleBooking(
-      selectedBooking.id
+      booking.id
     );
 
     await Promise.all([
       loadBookings(),
       loadWeekAvailability(),
     ]);
+    setEditingBookingId(null);
     setModal(null);
   } catch (deleteError) {
     setError(
@@ -604,18 +658,22 @@ useEffect(() => {
     ) || filteredWeekDays[0] || null;
 
 
-  const matchesSearch = (booking) => {
+  const matchesSearch = (slotBookings) => {
     if (!search.trim()) return true;
 
-    const text = `
-      ${booking?.name || ""}
-      ${booking?.phone || ""}
-      ${booking?.instrument || ""}
-      ${booking?.classTypeLabel || ""}
-      ${booking?.notes || ""}
-    `.toLowerCase();
+    return slotBookings.some((booking) => {
+      const text = `
+        ${booking?.name || ""}
+        ${booking?.phone || ""}
+        ${booking?.instrument || ""}
+        ${booking?.classTypeLabel || ""}
+        ${booking?.notes || ""}
+      `.toLowerCase();
 
-    return text.includes(search.toLowerCase());
+      return text.includes(
+        search.toLowerCase()
+      );
+    });
   };
 
   const isSlotUnavailable = (
@@ -633,13 +691,15 @@ useEffect(() => {
 
   const isVisible = (day, time) => {
     const id = makeId(day, time);
-    const booking = bookings[id];
+    const slotBookings = bookings[id] || [];
+    const hasBookings =
+      slotBookings.length > 0;
     const isUnavailable =
       isSlotUnavailable(day, time);
 
     if (
       statusFilter === "booked"
-      && !booking
+      && !hasBookings
     ) {
       return false;
     }
@@ -647,7 +707,7 @@ useEffect(() => {
     if (
       statusFilter === "free"
       && (
-        booking
+        hasBookings
         || isUnavailable
       )
     ) {
@@ -662,14 +722,14 @@ useEffect(() => {
     }
 
     if (
-      booking
-      && !matchesSearch(booking)
+      hasBookings
+      && !matchesSearch(slotBookings)
     ) {
       return false;
     }
 
     if (
-      !booking
+      !hasBookings
       && search.trim()
     ) {
       return false;
@@ -701,10 +761,49 @@ useEffect(() => {
 
   /* ================= SELECTED BOOKING ================= */
 
-  const selectedBooking =
-    selectedId && bookings[selectedId]
-      ? bookings[selectedId]
+  const selectedBookings =
+    selectedId
+      ? bookings[selectedId] || []
+      : [];
+
+  const selectedMetadata =
+    selectedId
+      ? slotMetadata.get(selectedId)
       : null;
+
+  const editingBooking =
+    selectedBookings.find(
+      (booking) =>
+        booking.id === editingBookingId
+    ) || null;
+
+  const selectedPrimaryBooking =
+    selectedBookings[0] || null;
+
+  const selectedClassType =
+    selectedMetadata?.classType
+    || selectedPrimaryBooking?.classType
+    || "private";
+
+  const selectedClassTypeLabel =
+    selectedMetadata?.classTypeLabel
+    || selectedPrimaryBooking?.classTypeLabel
+    || CLASS_TYPE_LABELS[selectedClassType];
+
+  const selectedCapacity = Number(
+    selectedMetadata?.capacity
+    || selectedPrimaryBooking?.capacity
+    || 1
+  );
+
+  const selectedBookedCount =
+    selectedBookings.length;
+
+  const selectedRemainingCapacity =
+    Math.max(
+      0,
+      selectedCapacity - selectedBookedCount
+    );
 
   const selectedDay =
     selectedId?.split("|")[0];
@@ -1023,8 +1122,45 @@ useEffect(() => {
                     const id =
                       makeId(day.label, time);
 
+                    const slotBookings =
+                      bookings[id] || [];
+
                     const booking =
-                      bookings[id];
+                      slotBookings[0] || null;
+
+                    const metadata =
+                      slotMetadata.get(id);
+
+                    const hasBookings =
+                      slotBookings.length > 0;
+
+                    const hasOffering = Boolean(
+                      metadata?.offeringId
+                    );
+
+                    const hasClass =
+                      hasBookings || hasOffering;
+
+                    const classType =
+                      metadata?.classType
+                      || booking?.classType
+                      || "private";
+
+                    const classTypeLabel =
+                      metadata?.classTypeLabel
+                      || booking?.classTypeLabel
+                      || CLASS_TYPE_LABELS[classType];
+
+                    const capacity = Number(
+                      metadata?.capacity
+                      || booking?.capacity
+                      || 1
+                    );
+
+                    const endTime =
+                      metadata?.endTime
+                      || booking?.endTime
+                      || addThirtyMinutes(time);
 
                     const unavailable =
                       isSlotUnavailable(
@@ -1043,8 +1179,10 @@ useEffect(() => {
                         key={id}
                         className={`
                           schedule-slot
-                          ${booking
+                          ${hasBookings
                             ? "booked"
+                            : hasOffering
+                              ? "offering"
                             : unavailable
                               ? "unavailable"
                               : "free"}
@@ -1069,23 +1207,28 @@ useEffect(() => {
                           <button
                             className="slot-button"
                             onClick={() =>
-                              booking
+                              hasBookings
                                 ? showDetails(id)
                                 : openBooking(id)
                             }
                           >
 
-                            {booking ? (
+                            {hasClass ? (
                               <>
                                 <strong>
-                                  {booking.name}
+                                  {classType === "group"
+                                    ? classTypeLabel
+                                    : booking?.name
+                                      || classTypeLabel}
                                 </strong>
 
                                 <small>
-                                  {booking.classTypeLabel ||
-                                    "کلاس خصوصی"}
-                                  {" · "}
-                                  {booking.startTime} تا {booking.endTime}
+                                  {classType === "group"
+                                    ? `${slotBookings.length} از ${capacity} هنرجو · `
+                                    : booking
+                                      ? `${classTypeLabel} · `
+                                      : ""}
+                                  {time} تا {endTime}
                                 </small>
                               </>
                             ) : (
@@ -1210,8 +1353,42 @@ useEffect(() => {
                   time
                 );
 
+                const slotBookings =
+                  bookings[id] || [];
+
                 const booking =
-                  bookings[id];
+                  slotBookings[0] || null;
+
+                const metadata =
+                  slotMetadata.get(id);
+
+                const hasBookings =
+                  slotBookings.length > 0;
+
+                const hasOffering = Boolean(
+                  metadata?.offeringId
+                );
+
+                const classType =
+                  metadata?.classType
+                  || booking?.classType
+                  || "private";
+
+                const classTypeLabel =
+                  metadata?.classTypeLabel
+                  || booking?.classTypeLabel
+                  || CLASS_TYPE_LABELS[classType];
+
+                const capacity = Number(
+                  metadata?.capacity
+                  || booking?.capacity
+                  || 1
+                );
+
+                const endTime =
+                  metadata?.endTime
+                  || booking?.endTime
+                  || addThirtyMinutes(time);
 
                 const unavailable =
                   isSlotUnavailable(
@@ -1224,8 +1401,10 @@ useEffect(() => {
                     type="button"
                     className={
                       `mobile-slot ${
-                        booking
+                        hasBookings
                           ? "booked"
+                          : hasOffering
+                            ? "offering"
                           : unavailable
                             ? "unavailable"
                             : "free"
@@ -1236,14 +1415,18 @@ useEffect(() => {
                     onClick={() => {
                       if (unavailable) return;
 
-                      booking
+                      hasBookings
                         ? showDetails(id)
                         : openBooking(id);
                     }}
                     aria-label={
                       `${activeMobileDay.label} ساعت ${time} - ${
-                        booking
-                          ? booking.name
+                        hasBookings
+                          ? classType === "group"
+                            ? classTypeLabel
+                            : booking.name
+                          : hasOffering
+                            ? classTypeLabel
                           : unavailable
                             ? "بسته"
                             : "آزاد"
@@ -1256,16 +1439,22 @@ useEffect(() => {
 
                     <span className="mobile-slot-copy">
                       <strong>
-                        {booking
-                          ? booking.name
+                        {hasBookings
+                          ? classType === "group"
+                            ? classTypeLabel
+                            : booking.name
+                          : hasOffering
+                            ? classTypeLabel
                           : unavailable
                             ? "بسته"
                             : "زمان آزاد"}
                       </strong>
 
                       <small>
-                        {booking
-                          ? `${booking.classTypeLabel || "کلاس خصوصی"} · ${booking.startTime} تا ${booking.endTime}`
+                        {hasBookings || hasOffering
+                          ? classType === "group"
+                            ? `${slotBookings.length} از ${capacity} هنرجو · ${time} تا ${endTime}`
+                            : `${classTypeLabel} · ${time} تا ${endTime}`
                           : unavailable
                             ? "خارج از زمان تدریس"
                             : "برای ثبت رزرو لمس کنید"}
@@ -1319,9 +1508,11 @@ useEffect(() => {
             </button>
 
             <h2>
-              {selectedBooking
-                ? "ویرایش رزرو"
-                : "رزرو کلاس"}
+              {editingBooking
+                ? "ویرایش هنرجو"
+                : selectedBookings.length
+                  ? "افزودن هنرجو به کلاس"
+                  : "تعریف کلاس و ثبت هنرجو"}
             </h2>
 
             <p className="modal-slot">
@@ -1385,10 +1576,18 @@ useEffect(() => {
                   value={form.classType}
                   disabled={Boolean(form.offeringId)}
                   onChange={(e) =>
-                    setForm({
-                      ...form,
+                    setForm((current) => ({
+                      ...current,
                       classType: e.target.value,
-                    })
+                      capacity:
+                        e.target.value === "group"
+                          ? Math.max(
+                              2,
+                              Number(current.capacity)
+                              || 2
+                            )
+                          : 1,
+                    }))
                   }
                 >
                   {Object.entries(CLASS_TYPE_LABELS).map(
@@ -1401,6 +1600,37 @@ useEffect(() => {
                 </select>
 
               </div>
+
+              {form.classType === "group" && (
+                <div className="form-field">
+
+                  <label>
+                    ظرفیت کلاس گروهی
+                  </label>
+
+                  <input
+                    required
+                    type="number"
+                    min="2"
+                    max="50"
+                    value={form.capacity}
+                    disabled={Boolean(form.offeringId)}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        capacity: e.target.value,
+                      })
+                    }
+                  />
+
+                  <small className="form-field-note">
+                    {form.offeringId
+                      ? "ظرفیت این کلاس از بخش نوع و ساعت کلاس‌ها مدیریت می‌شود."
+                      : "حداکثر تعداد هنرجوهای این کلاس را مشخص کنید."}
+                  </small>
+
+                </div>
+              )}
 
               <div className="form-field">
 
@@ -1468,9 +1698,9 @@ useEffect(() => {
                 >
                   {saving
                     ? "در حال ذخیره..."
-                    : selectedBooking
+                    : editingBooking
                       ? "ذخیره تغییرات"
-                      : "ثبت رزرو"}
+                      : "ثبت هنرجو"}
                 </button>
 
               </div>
@@ -1486,7 +1716,7 @@ useEffect(() => {
       {/* ================= DETAILS MODAL ================= */}
 
       {modal === "details" &&
-        selectedBooking && (
+        selectedBookings.length > 0 && (
 
           <div
             className="schedule-modal-overlay"
@@ -1521,27 +1751,7 @@ useEffect(() => {
                   </span>
 
                   <strong>
-                    {selectedDateLabel} — {selectedTime} تا {selectedBooking.endTime}
-                  </strong>
-                </div>
-
-                <div>
-                  <span>
-                    هنرجو
-                  </span>
-
-                  <strong>
-                    {selectedBooking.name}
-                  </strong>
-                </div>
-
-                <div>
-                  <span>
-                    شماره تماس
-                  </span>
-
-                  <strong>
-                    {selectedBooking.phone}
+                    {selectedDateLabel} — {selectedTime} تا {selectedMetadata?.endTime || selectedPrimaryBooking.endTime}
                   </strong>
                 </div>
 
@@ -1551,42 +1761,93 @@ useEffect(() => {
                   </span>
 
                   <strong>
-                    {selectedBooking.classTypeLabel ||
-                      "کلاس خصوصی"}
+                    {selectedClassTypeLabel}
                   </strong>
                 </div>
 
                 <div>
                   <span>
-                    توضیحات
+                    ظرفیت
                   </span>
 
                   <strong>
-                    {selectedBooking.notes ||
-                      "—"}
+                    {selectedBookedCount} از {selectedCapacity} نفر
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    ظرفیت باقی‌مانده
+                  </span>
+
+                  <strong>
+                    {selectedRemainingCapacity} نفر
                   </strong>
                 </div>
 
               </div>
 
+              <section className="class-members">
+                <header>
+                  <div>
+                    <span>اعضای این کلاس</span>
+                    <strong>هنرجویان ثبت‌شده</strong>
+                  </div>
+                  <b>{selectedBookedCount}</b>
+                </header>
+
+                <div className="class-members-list">
+                  {selectedBookings.map((booking) => (
+                    <article
+                      className="class-member"
+                      key={booking.id}
+                    >
+                      <div className="class-member-info">
+                        <strong>{booking.name}</strong>
+                        <span dir="ltr">{booking.phone}</span>
+                        {booking.notes && (
+                          <small>{booking.notes}</small>
+                        )}
+                      </div>
+
+                      <div className="class-member-actions">
+                        <button
+                          type="button"
+                          className="member-edit-button"
+                          onClick={() =>
+                            editBooking(booking)
+                          }
+                        >
+                          ویرایش
+                        </button>
+                        <button
+                          type="button"
+                          className="member-delete-button"
+                          disabled={saving}
+                          onClick={() =>
+                            cancelBooking(booking)
+                          }
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
               <div className="modal-actions">
 
-                <button
-                  className="danger-btn"
-                  onClick={cancelBooking}
-                  disabled={saving}
-                >
-                  {saving
-                    ? "در حال لغو..."
-                    : "لغو رزرو"}
-                </button>
-
-                <button
-                  className="primary-btn"
-                  onClick={editBooking}
-                >
-                  ویرایش
-                </button>
+                {selectedRemainingCapacity > 0 && (
+                  <button
+                    className="primary-btn"
+                    onClick={() =>
+                      openBooking(selectedId)
+                    }
+                  >
+                    افزودن هنرجو
+                  </button>
+                )}
 
                 <button
                   className="secondary-btn"

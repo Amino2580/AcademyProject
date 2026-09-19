@@ -89,7 +89,7 @@ function RegisterModal({
             level: formData.level,
             instrument: "پیانو",
             classType:
-              selectedSlot?.classType || "private",
+              selectedSlot?.classType || "",
             offeringId:
               selectedSlot?.offeringId || null,
             preferredDay:
@@ -175,13 +175,22 @@ function RegisterModal({
 
             <strong>
               {selectedSlot.dayLabel}
-              {"، "}
-              {selectedSlot.classTypeLabel || "کلاس خصوصی"}
+              {selectedSlot.classTypeLabel
+                ? `، ${selectedSlot.classTypeLabel}`
+                : ""}
             </strong>
 
             <strong dir="ltr">
               {selectedSlot.startTime} تا {selectedSlot.endTime}
             </strong>
+
+            {selectedSlot.capacity && (
+              <small>
+                ظرفیت: {selectedSlot.bookedCount || 0}
+                {" از "}
+                {selectedSlot.capacity} نفر
+              </small>
+            )}
 
             <small>
               ثبت نهایی این زمان پس از

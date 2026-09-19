@@ -233,6 +233,67 @@ class ClassOfferingAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(ClassOffering.objects.exists())
 
+    def test_capacity_cannot_drop_below_active_students(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        offering = ClassOffering.objects.create(
+            day=ClassBooking.Weekday.SATURDAY,
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            class_type=ClassBooking.ClassType.GROUP,
+            capacity=4,
+        )
+
+        starts_on = timezone.localdate()
+
+        for index in range(3):
+            student = Student.objects.create(
+                full_name=f"Group Student {index}",
+                phone=f"0912111111{index}",
+            )
+            enrollment = Enrollment.objects.create(
+                student=student,
+                starts_on=starts_on,
+                expires_on=(
+                    starts_on + timedelta(days=30)
+                ),
+            )
+            ClassBooking.objects.create(
+                day=offering.day,
+                start_time=offering.start_time,
+                end_time=offering.end_time,
+                class_type=offering.class_type,
+                offering=offering,
+                student=student,
+                enrollment=enrollment,
+                student_name=student.full_name,
+                phone=student.phone,
+            )
+
+        response = self.client.patch(
+            reverse(
+                "schedule_admin:offering-detail",
+                args=[offering.id],
+            ),
+            {
+                "capacity": 2,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "capacity",
+            response.data["metaData"]
+            ["status"]["message"],
+        )
+
+        offering.refresh_from_db()
+        self.assertEqual(offering.capacity, 4)
+
 
 class AvailabilityExceptionAPITests(
     APITestCase

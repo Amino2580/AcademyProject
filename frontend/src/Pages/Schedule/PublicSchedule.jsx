@@ -101,8 +101,26 @@ const getSlotDetails = (slot) => {
   const isUnavailable =
     ["booked", "closed", "continuation"].includes(slotStatus);
 
-  const classTypeLabel =
-    slot?.classTypeLabel || "کلاس خصوصی";
+  const hasDefinedClass = Boolean(
+    slot?.offeringId
+  );
+
+  const classTypeLabel = hasDefinedClass
+    ? slot?.classTypeLabel || ""
+    : "";
+
+  const capacity = Number(
+    slot?.capacity || 0
+  );
+
+  const bookedCount = Number(
+    slot?.bookedCount || 0
+  );
+
+  const capacityLabel =
+    hasDefinedClass && capacity > 0
+      ? `${bookedCount} از ${capacity} نفر`
+      : "";
 
   const endTime =
     slot?.endTime || addThirtyMinutes(slot?.startTime || "07:00");
@@ -110,13 +128,15 @@ const getSlotDetails = (slot) => {
   return {
     isBooked,
     isUnavailable,
+    hasDefinedClass,
     classTypeLabel,
+    capacityLabel,
     endTime,
     statusLabel: isBooked
       ? "ظرفیت تکمیل"
       : isUnavailable
         ? "غیرقابل رزرو"
-        : classTypeLabel,
+        : classTypeLabel || "ظرفیت آزاد",
   };
 };
 
@@ -375,8 +395,6 @@ function PublicSchedule({
                             startTime: time,
                             endTime: addThirtyMinutes(time),
                             status: "free",
-                            classType: "private",
-                            classTypeLabel: "کلاس خصوصی",
                           };
 
                         const {
@@ -384,6 +402,7 @@ function PublicSchedule({
                           isUnavailable,
                           statusLabel,
                           classTypeLabel,
+                          capacityLabel,
                           endTime,
                         } = getSlotDetails(
                           slot
@@ -412,9 +431,13 @@ function PublicSchedule({
                                   dateKey: day.dateKey,
                                   startTime: time,
                                   endTime,
-                                  classType: slot.classType || "private",
+                                  classType: slot.classType || "",
                                   classTypeLabel,
                                   offeringId: slot.offeringId || null,
+                                  capacity: slot.capacity || null,
+                                  bookedCount: slot.bookedCount || 0,
+                                  remainingCapacity:
+                                    slot.remainingCapacity ?? null,
                                 })
                               }
                               aria-label={
@@ -424,8 +447,14 @@ function PublicSchedule({
                               <span>
                                 {statusLabel}
                               </span>
-                              {!isUnavailable && (
-                                <small>{time} تا {endTime}</small>
+                              {slot.status !== "closed"
+                                && slot.status !== "continuation" && (
+                                <small>
+                                  {capacityLabel
+                                    ? `${capacityLabel} · `
+                                    : ""}
+                                  {time} تا {endTime}
+                                </small>
                               )}
                             </button>
                           </td>
@@ -521,8 +550,6 @@ function PublicSchedule({
                         startTime: time,
                         endTime: addThirtyMinutes(time),
                         status: "free",
-                        classType: "private",
-                        classTypeLabel: "کلاس خصوصی",
                       };
 
                     const {
@@ -530,6 +557,7 @@ function PublicSchedule({
                       isUnavailable,
                       statusLabel,
                       classTypeLabel,
+                      capacityLabel,
                       endTime,
                     } = getSlotDetails(
                       slot
@@ -563,9 +591,13 @@ function PublicSchedule({
                               dateKey: activeMobileDay.dateKey,
                               startTime: time,
                               endTime,
-                              classType: slot.classType || "private",
+                              classType: slot.classType || "",
                               classTypeLabel,
                               offeringId: slot.offeringId || null,
+                              capacity: slot.capacity || null,
+                              bookedCount: slot.bookedCount || 0,
+                              remainingCapacity:
+                                slot.remainingCapacity ?? null,
                             })
                           }
                           aria-label={
@@ -573,8 +605,12 @@ function PublicSchedule({
                           }
                         >
                           <span>{statusLabel}</span>
-                          {!isUnavailable && (
+                          {slot.status !== "closed"
+                            && slot.status !== "continuation" && (
                             <small>
+                              {capacityLabel
+                                ? `${capacityLabel} · `
+                                : ""}
                               {time} تا {endTime}
                             </small>
                           )}

@@ -70,6 +70,8 @@ class ClassBookingSerializer(
         read_only=True,
     )
 
+    capacity = serializers.SerializerMethodField()
+
     offeringId = serializers.PrimaryKeyRelatedField(
         source="offering",
         queryset=ClassOffering.objects.filter(
@@ -128,6 +130,7 @@ class ClassBookingSerializer(
             "endTime",
             "classType",
             "classTypeLabel",
+            "capacity",
             "offeringId",
             "name",
             "phone",
@@ -145,6 +148,7 @@ class ClassBookingSerializer(
             "studentId",
             "dayLabel",
             "classTypeLabel",
+            "capacity",
             "termStartsOn",
             "termExpiresOn",
             "createdAt",
@@ -256,6 +260,15 @@ class ClassBookingSerializer(
             ),
         )
 
+        class_type = attrs.get(
+            "class_type",
+            getattr(
+                self.instance,
+                "class_type",
+                ClassBooking.ClassType.PRIVATE,
+            ),
+        )
+
         if offering is not None:
             requested_values = {
                 "day": day,
@@ -296,6 +309,21 @@ class ClassBookingSerializer(
             day = offering.day
             start_time = offering.start_time
             end_time = offering.end_time
+            class_type = offering.class_type
+
+        if (
+            class_type
+            == ClassBooking.ClassType.GROUP
+            and offering is None
+        ):
+            raise serializers.ValidationError(
+                {
+                    "offeringId": (
+                        "برای کلاس گروهی باید ابتدا "
+                        "ظرفیت و برنامهٔ کلاس تعریف شود."
+                    )
+                }
+            )
 
         if end_time is None:
             end_time = default_end_time(start_time)
@@ -445,6 +473,13 @@ class ClassBookingSerializer(
             )
 
         return attrs
+
+
+    def get_capacity(self, obj):
+        if obj.offering_id is not None:
+            return obj.offering.capacity
+
+        return 1
 
 
     @staticmethod

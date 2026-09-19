@@ -128,6 +128,102 @@ class ClassBookingAdminAPITests(APITestCase):
             "09:00",
         )
 
+        self.assertEqual(
+            response.data["capacity"],
+            1,
+        )
+
+
+    def test_group_booking_requires_an_offering(self):
+        self.authenticate_admin()
+
+        response = self.client.post(
+            self.list_url,
+            {
+                **self.payload,
+                "classType": (
+                    ClassBooking.ClassType.GROUP
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "offeringId",
+            response.data["metaData"]
+            ["status"]["message"],
+        )
+        self.assertFalse(
+            ClassBooking.objects.exists()
+        )
+
+
+    def test_group_offering_accepts_students_until_capacity(
+        self,
+    ):
+        self.authenticate_admin()
+
+        offering = ClassOffering.objects.create(
+            day=ClassBooking.Weekday.SATURDAY,
+            start_time=time(9, 0),
+            end_time=time(9, 30),
+            class_type=(
+                ClassBooking.ClassType.GROUP
+            ),
+            capacity=2,
+        )
+
+        first_class_date = (
+            get_week_start()
+            + timedelta(days=7)
+        )
+
+        responses = []
+
+        for index in range(3):
+            responses.append(
+                self.client.post(
+                    self.list_url,
+                    {
+                        **self.payload,
+                        "name": f"Student {index}",
+                        "phone": f"0912000000{index}",
+                        "offeringId": offering.id,
+                        "firstClassDate": (
+                            first_class_date.isoformat()
+                        ),
+                    },
+                    format="json",
+                )
+            )
+
+        self.assertEqual(
+            responses[0].status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(
+            responses[1].status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(
+            responses[1].data["capacity"],
+            2,
+        )
+        self.assertEqual(
+            responses[2].status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertEqual(
+            ClassBooking.objects.filter(
+                offering=offering
+            ).count(),
+            2,
+        )
+
     def test_multiple_weekly_days_share_one_month_term(
         self,
     ):
@@ -684,6 +780,67 @@ class PublicScheduleAvailabilityAPITests(
         self.assertEqual(slot["classType"], "group")
         self.assertEqual(slot["classTypeLabel"], "کلاس گروهی")
         self.assertEqual(slot["remainingCapacity"], 4)
+
+    def test_group_class_with_one_student_is_not_full(self):
+        offering = ClassOffering.objects.create(
+            day=ClassBooking.Weekday.MONDAY,
+            start_time=time(11, 0),
+            end_time=time(11, 30),
+            class_type=ClassBooking.ClassType.GROUP,
+            capacity=4,
+        )
+
+        session_date = (
+            get_week_start()
+            + timedelta(days=2)
+        )
+        student = Student.objects.create(
+            full_name="Reza Amini",
+            phone="09366542210",
+        )
+        enrollment = Enrollment.objects.create(
+            student=student,
+            starts_on=session_date,
+            expires_on=(
+                session_date + timedelta(days=30)
+            ),
+        )
+        booking = ClassBooking.objects.create(
+            day=offering.day,
+            start_time=offering.start_time,
+            end_time=offering.end_time,
+            class_type=offering.class_type,
+            offering=offering,
+            student=student,
+            enrollment=enrollment,
+            student_name=student.full_name,
+            phone=student.phone,
+        )
+        ClassSession.objects.create(
+            booking=booking,
+            date=session_date,
+            start_time=offering.start_time,
+            end_time=offering.end_time,
+        )
+
+        response = self.client.get(
+            self.url,
+            {
+                "weekStart": (
+                    get_week_start().isoformat()
+                )
+            },
+        )
+        slot = next(
+            item
+            for item in response.data
+            if item.get("offeringId") == offering.id
+        )
+
+        self.assertFalse(slot["isBooked"])
+        self.assertEqual(slot["status"], "offering")
+        self.assertEqual(slot["bookedCount"], 1)
+        self.assertEqual(slot["remainingCapacity"], 3)
 
     def test_public_api_does_not_allow_creating_booking(self):
         response = self.client.post(
