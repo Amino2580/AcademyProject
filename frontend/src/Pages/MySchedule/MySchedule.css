@@ -62,10 +62,6 @@
   flex: 0 0 auto;
 }
 
-.my-schedule-current-date time {
-  font-family: inherit;
-}
-
 .my-schedule-header button,
 .my-schedule-message button {
   padding: 13px 20px;
