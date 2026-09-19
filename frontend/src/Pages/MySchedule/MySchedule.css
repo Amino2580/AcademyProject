@@ -51,10 +51,19 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
+  font-family: "Vazirmatn", Tahoma, sans-serif;
+}
+
+.my-schedule-header-actions * {
+  font-family: inherit;
 }
 
 .my-schedule-current-date {
   flex: 0 0 auto;
+}
+
+.my-schedule-current-date time {
+  font-family: inherit;
 }
 
 .my-schedule-header button,

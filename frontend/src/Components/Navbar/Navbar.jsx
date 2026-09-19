@@ -38,12 +38,14 @@ function Navbar() {
   const authUser = getAuthUser();
   const authenticated = isAuthenticated();
 
-  const showLogout =
+  const showFloatingLogout =
     authenticated &&
     [
       "/",
       "/my-schedule",
     ].includes(location.pathname);
+
+  const showMobileLogout = authenticated;
 
   const accountItem = {
     title: authenticated
@@ -268,7 +270,7 @@ function Navbar() {
             )}
           </div>
 
-          {showLogout && (
+          {showMobileLogout && (
             <button
               type="button"
               className="navbar-mobile-logout"
@@ -323,7 +325,7 @@ function Navbar() {
         </div>
       </nav>
 
-      {showLogout &&
+      {showFloatingLogout &&
         createPortal(
           <button
             type="button"

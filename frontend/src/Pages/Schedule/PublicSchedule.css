@@ -49,6 +49,11 @@
   width: 100%;
   min-width: 1000px;
   border-spacing: 8px;
+  table-layout: fixed;
+}
+
+.public-schedule-time-column {
+  width: 78px;
 }
 
 .public-schedule-table th {
@@ -107,7 +112,7 @@
 }
 
 .public-schedule-table td {
-  min-width: 135px;
+  width: auto;
 }
 
 .public-schedule-table .public-schedule-time {
@@ -120,13 +125,16 @@
 
 .public-schedule-slot {
   width: 100%;
+  box-sizing: border-box;
   font: inherit;
   cursor: pointer;
   appearance: none;
   display: flex;
+  flex-direction: column;
   min-height: 64px;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   padding: 12px;
   border: 1px solid;
   border-radius: 13px;
@@ -138,17 +146,17 @@
     border-color 180ms ease;
 }
 
-.public-schedule-slot:not(:disabled) {
-  flex-direction: column;
-  gap: 2px;
-}
-
 .public-schedule-slot small {
   direction: ltr;
+  white-space: nowrap;
   color: currentColor;
   font-size: 9px;
   font-weight: 400;
   opacity: 0.7;
+}
+
+.public-schedule-slot > span {
+  white-space: nowrap;
 }
 
 .public-schedule-slot.is-free {

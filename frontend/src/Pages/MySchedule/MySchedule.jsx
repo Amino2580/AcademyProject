@@ -154,11 +154,6 @@ function MySchedule() {
         </div>
 
         <div className="my-schedule-header-actions">
-          <CurrentDateTimeCard
-            value={currentDateTime}
-            className="my-schedule-current-date"
-          />
-
           <button
             type="button"
             onClick={() =>
@@ -167,6 +162,11 @@ function MySchedule() {
           >
             مشاهده برنامه عمومی
           </button>
+
+          <CurrentDateTimeCard
+            value={currentDateTime}
+            className="my-schedule-current-date"
+          />
         </div>
       </header>
 

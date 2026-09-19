@@ -109,28 +109,13 @@ const getSlotDetails = (slot) => {
     ? slot?.classTypeLabel || ""
     : "";
 
-  const capacity = Number(
-    slot?.capacity || 0
-  );
-
-  const bookedCount = Number(
-    slot?.bookedCount || 0
-  );
-
-  const capacityLabel =
-    hasDefinedClass && capacity > 0
-      ? `${bookedCount} از ${capacity} نفر`
-      : "";
-
   const endTime =
     slot?.endTime || addThirtyMinutes(slot?.startTime || "07:00");
 
   return {
     isBooked,
     isUnavailable,
-    hasDefinedClass,
     classTypeLabel,
-    capacityLabel,
     endTime,
     statusLabel: isBooked
       ? "ظرفیت تکمیل"
@@ -337,6 +322,16 @@ function PublicSchedule({
           <section className="public-schedule-card public-schedule-desktop">
             <div className="public-schedule-table-wrapper">
               <table className="public-schedule-table">
+                <colgroup>
+                  <col className="public-schedule-time-column" />
+                  {datedDays.map((day) => (
+                    <col
+                      className="public-schedule-day-column"
+                      key={day.value}
+                    />
+                  ))}
+                </colgroup>
+
                 <thead>
                   <tr>
                     <th>
@@ -402,7 +397,6 @@ function PublicSchedule({
                           isUnavailable,
                           statusLabel,
                           classTypeLabel,
-                          capacityLabel,
                           endTime,
                         } = getSlotDetails(
                           slot
@@ -450,9 +444,6 @@ function PublicSchedule({
                               {slot.status !== "closed"
                                 && slot.status !== "continuation" && (
                                 <small>
-                                  {capacityLabel
-                                    ? `${capacityLabel} · `
-                                    : ""}
                                   {time} تا {endTime}
                                 </small>
                               )}
@@ -557,7 +548,6 @@ function PublicSchedule({
                       isUnavailable,
                       statusLabel,
                       classTypeLabel,
-                      capacityLabel,
                       endTime,
                     } = getSlotDetails(
                       slot
@@ -608,9 +598,6 @@ function PublicSchedule({
                           {slot.status !== "closed"
                             && slot.status !== "continuation" && (
                             <small>
-                              {capacityLabel
-                                ? `${capacityLabel} · `
-                                : ""}
                               {time} تا {endTime}
                             </small>
                           )}

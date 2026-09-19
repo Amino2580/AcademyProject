@@ -223,6 +223,10 @@ function Schedule() {
     offeringId: null,
     notes: "",
   });
+
+  const [includeStudent, setIncludeStudent] =
+    useState(false);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -469,6 +473,11 @@ useEffect(() => {
     const existingBooking =
       bookings[id]?.[0];
 
+    const hasExistingClass = Boolean(
+      metadata?.offeringId
+      || existingBooking?.offeringId
+    );
+
     const classType =
       metadata?.classType
       || existingBooking?.classType
@@ -494,6 +503,8 @@ useEffect(() => {
       notes: "",
     });
 
+    setIncludeStudent(hasExistingClass);
+
     setModal("booking");
   };
 
@@ -517,6 +528,24 @@ useEffect(() => {
 
   try {
     let offeringId = form.offeringId;
+    const shouldSaveStudent = Boolean(
+      editingBooking
+      || form.offeringId
+      || includeStudent
+    );
+
+    if (
+      shouldSaveStudent
+      && (
+        !form.name.trim()
+        || !form.phone.trim()
+      )
+    ) {
+      setError(
+        "برای ثبت هنرجو، نام و شماره تماس را وارد کنید."
+      );
+      return;
+    }
 
     if (!offeringId && !editingBooking) {
       const offering = await createClassOffering({
@@ -540,34 +569,36 @@ useEffect(() => {
       }));
     }
 
-    const bookingData = {
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      instrument: form.instrument.trim(),
-      classType: form.classType,
-      endTime: form.endTime,
-      offeringId,
-      notes: form.notes.trim(),
-    };
+    if (shouldSaveStudent) {
+      const bookingData = {
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        instrument: form.instrument.trim(),
+        classType: form.classType,
+        endTime: form.endTime,
+        offeringId,
+        notes: form.notes.trim(),
+      };
 
-    if (editingBooking) {
-      await updateScheduleBooking(
-        editingBooking.id,
-        bookingData
-      );
-    } else {
-      const firstClassDate =
-        weekDays.find(
-          (day) =>
-            day.label === selectedDay
-        )?.isoDate;
+      if (editingBooking) {
+        await updateScheduleBooking(
+          editingBooking.id,
+          bookingData
+        );
+      } else {
+        const firstClassDate =
+          weekDays.find(
+            (day) =>
+              day.label === selectedDay
+          )?.isoDate;
 
-      await createScheduleBooking({
-        day: DAY_VALUES[selectedDay],
-        startTime: selectedTime,
-        firstClassDate,
-        ...bookingData,
-      });
+        await createScheduleBooking({
+          day: DAY_VALUES[selectedDay],
+          startTime: selectedTime,
+          firstClassDate,
+          ...bookingData,
+        });
+      }
     }
 
     await Promise.all([
@@ -602,6 +633,8 @@ useEffect(() => {
       offeringId: booking.offeringId || null,
       notes: booking.notes || "",
     });
+
+    setIncludeStudent(true);
 
     setModal("booking");
   };
@@ -823,6 +856,17 @@ useEffect(() => {
           selectedDate
         )
       : selectedDay;
+
+  const isDefiningClass = Boolean(
+    modal === "booking"
+    && !editingBooking
+    && !form.offeringId
+  );
+
+  const showStudentFields = Boolean(
+    !isDefiningClass
+    || includeStudent
+  );
 
   return (
     <div className="schedule-page">
@@ -1510,9 +1554,9 @@ useEffect(() => {
             <h2>
               {editingBooking
                 ? "ویرایش هنرجو"
-                : selectedBookings.length
-                  ? "افزودن هنرجو به کلاس"
-                  : "تعریف کلاس و ثبت هنرجو"}
+                : isDefiningClass
+                  ? "تعریف کلاس"
+                  : "افزودن هنرجو به کلاس"}
             </h2>
 
             <p className="modal-slot">
@@ -1522,49 +1566,6 @@ useEffect(() => {
             <form
               onSubmit={submitBooking}
             >
-
-              <div className="form-field">
-
-                <label>
-                  نام هنرجو
-                </label>
-
-                <input
-                  required
-                  maxLength="60"
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      name: e.target.value,
-                    })
-                  }
-                  placeholder="نام و نام خانوادگی"
-                />
-
-              </div>
-
-              <div className="form-field">
-
-                <label>
-                  شماره تماس
-                </label>
-
-                <input
-                  required
-                  type="tel"
-                  maxLength="30"
-                  value={form.phone}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      phone: e.target.value,
-                    })
-                  }
-                  placeholder="09xxxxxxxxx"
-                />
-
-              </div>
 
               <div className="form-field">
 
@@ -1658,26 +1659,101 @@ useEffect(() => {
 
               </div>
 
-              <div className="form-field">
+              {isDefiningClass && (
+                <label className="schedule-student-toggle">
+                  <div>
+                    <strong>
+                      ثبت هم‌زمان هنرجو
+                    </strong>
 
-                <label>
-                  توضیحات
+                    <span>
+                      اختیاری است؛ کلاس را می‌توانید بدون نام هنرجو برای ثبت‌نام عمومی منتشر کنید.
+                    </span>
+                  </div>
+
+                  <input
+                    type="checkbox"
+                    checked={includeStudent}
+                    onChange={(e) =>
+                      setIncludeStudent(
+                        e.target.checked
+                      )
+                    }
+                  />
                 </label>
+              )}
 
-                <textarea
-                  rows="4"
-                  maxLength="300"
-                  value={form.notes}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      notes: e.target.value,
-                    })
-                  }
-                  placeholder="توضیحات..."
-                />
+              {showStudentFields && (
+                <>
+                  <div className="schedule-student-fields-title">
+                    <span>اطلاعات هنرجو</span>
+                  </div>
 
-              </div>
+                  <div className="form-field">
+
+                    <label>
+                      نام هنرجو
+                    </label>
+
+                    <input
+                      required
+                      maxLength="60"
+                      value={form.name}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          name: e.target.value,
+                        })
+                      }
+                      placeholder="نام و نام خانوادگی"
+                    />
+
+                  </div>
+
+                  <div className="form-field">
+
+                    <label>
+                      شماره تماس
+                    </label>
+
+                    <input
+                      required
+                      type="tel"
+                      maxLength="30"
+                      value={form.phone}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          phone: e.target.value,
+                        })
+                      }
+                      placeholder="09xxxxxxxxx"
+                    />
+
+                  </div>
+
+                  <div className="form-field">
+
+                    <label>
+                      توضیحات
+                    </label>
+
+                    <textarea
+                      rows="4"
+                      maxLength="300"
+                      value={form.notes}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          notes: e.target.value,
+                        })
+                      }
+                      placeholder="توضیحات..."
+                    />
+
+                  </div>
+                </>
+              )}
 
               <div className="modal-actions">
 
@@ -1700,7 +1776,11 @@ useEffect(() => {
                     ? "در حال ذخیره..."
                     : editingBooking
                       ? "ذخیره تغییرات"
-                      : "ثبت هنرجو"}
+                      : isDefiningClass
+                        ? includeStudent
+                          ? "ثبت کلاس و هنرجو"
+                          : "ثبت کلاس"
+                        : "ثبت هنرجو"}
                 </button>
 
               </div>
